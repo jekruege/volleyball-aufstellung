@@ -81,7 +81,7 @@ Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
    als Dateinamen `vorlagen.json` eintragen und unten auf **Create secret gist**
    klicken. Secret heißt: nicht öffentlich auffindbar, aber für jeden mit dem
    Link lesbar. **Create public gist** geht genauso.
-5. Die Adresse aus der Adresszeile kopieren und an den Link anhängen:
+5. Die Adresse aus der Adresszeile kopieren und an den Link ttps://jekruege.github.io/volleyball-aufstellung/?vorlagen= anhängen. So zum Beispiel:
 
 ```
 https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://gist.github.com/name/abc123
@@ -98,12 +98,6 @@ lässt sich in jeder Seite über „Datei laden" einlesen.
 
 1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.
 2. „Als Datei sichern" klicken – es entsteht `volleyball-vorlagen.json`.
-3. Die Datei hier im Repository hochladen: als `vorlagen.json`, wenn sie der
-   gemeinsame Satz sein soll, sonst unter eigenem Namen wie `damen2.json`. In
-   beiden Fällen wird sie über `?vorlagen=` im Link aufgerufen.
-
-Nach ein bis zwei Minuten liefert GitHub Pages den neuen Stand aus. Wer die
-Seite vorher offen hatte, muss einmal neu laden.
 
 Über „Datei laden" lässt sich so eine Datei auch wieder in den eigenen Browser
 einlesen – gleichnamige Vorlagen werden ersetzt, die übrigen bleiben erhalten.
