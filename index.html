@@ -35,6 +35,9 @@
   .chips .dot { width:11px; height:11px; border-radius:50%; display:inline-block; }
   .doku { margin:18px 0 0; padding-top:14px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); line-height:1.5; }
   .doku a { color:#1f5fa8; }
+  #linkFeld { width:100%; margin-bottom:6px; font-size:12px; color:var(--muted); }
+  .mailbtn { display:inline-block; padding:8px 10px; border:1px solid var(--line); background:#fafafa; border-radius:8px; font-size:14px; color:var(--text); text-decoration:none; white-space:nowrap; }
+  .mailbtn:hover { background:#eef3fa; border-color:#b9cde6; }
 </style>
 </head>
 <body>
@@ -46,6 +49,9 @@
 
     <h2 id="hiddenHead" hidden>Ausgeblendet</h2>
     <div class="chips" id="hiddenList"></div>
+
+    <h2 id="linkHead" hidden>Vorlagen aus dem Link</h2>
+    <div id="linkList"></div>
 
     <h2 id="clubHead" hidden>Vereins-Vorlagen</h2>
     <div id="clubList"></div>
@@ -79,6 +85,17 @@
     <div class="row">
       <button class="inline" id="btnExport">Als Datei sichern</button>
       <button class="inline" id="btnImport">Datei laden</button>
+    </div>
+    <div class="row">
+      <button class="inline" id="btnLink">Link erzeugen</button>
+    </div>
+    <div id="linkBox" hidden>
+      <input type="text" id="linkFeld" readonly>
+      <div class="row">
+        <button class="inline" id="btnKopieren">Link kopieren</button>
+        <a class="mailbtn" id="btnMail" href="#">Per Mail schicken</a>
+      </div>
+      <p class="empty" id="linkInfo"></p>
     </div>
     <input type="file" id="fileIn" accept=".json,application/json" hidden>
 
@@ -503,6 +520,99 @@ fileIn.addEventListener("change", () => {
   r.readAsText(f);
 });
 renderList();
+
+/* ---------- Vorlagen im Link selbst ----------
+   „Link erzeugen“ packt die eigenen Vorlagen zusammen und hängt sie hinter das
+   #-Zeichen an die Adresse. Dieser Teil wird vom Browser nicht an den Server
+   geschickt – die Daten bleiben also im Link und werden nirgends gespeichert. */
+const B64 = {
+  ein: bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""),
+  aus: s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")), c => c.charCodeAt(0))
+};
+async function packen(text) {
+  const roh = new TextEncoder().encode(text);
+  if (!window.CompressionStream) return "u1=" + B64.ein(roh);      // ältere Browser
+  const str = new Blob([roh]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+  return "v1=" + B64.ein(new Uint8Array(await new Response(str).arrayBuffer()));
+}
+async function auspacken(teil) {
+  const art = teil.slice(0, 3), bytes = B64.aus(teil.slice(3));
+  if (art === "u1=") return new TextDecoder().decode(bytes);
+  const str = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return await new Response(str).text();
+}
+
+const linkBox = document.getElementById("linkBox"), linkFeld = document.getElementById("linkFeld");
+const linkInfo = document.getElementById("linkInfo"), btnMail = document.getElementById("btnMail");
+document.getElementById("btnLink").addEventListener("click", async () => {
+  const store = readStore();
+  const anzahl = Object.keys(store).length;
+  if (!anzahl) {
+    alert("Es sind noch keine eigenen Vorlagen gespeichert.\n\n" +
+          "Stelle die Mannschaft auf, gib oben einen Namen ein und klicke auf " +
+          "„Speichern“ – danach lässt sich daraus ein Link erzeugen.");
+    return;
+  }
+  try {
+    const link = location.origin + location.pathname + "#" + await packen(JSON.stringify(store));
+    linkFeld.value = link;
+    linkBox.hidden = false;
+    linkFeld.select();
+    linkInfo.textContent = `${anzahl} Vorlage(n) stecken in diesem Link (${link.length} Zeichen). ` +
+      "Als Lesezeichen sichern oder verschicken – beim Öffnen sind die Aufstellungen wieder da.";
+    btnMail.href = "mailto:?subject=" + encodeURIComponent("Meine Volleyball-Aufstellungen") +
+      "&body=" + encodeURIComponent("Hier sind meine Aufstellungen:\n\n" + link +
+      "\n\nEinfach den Link öffnen – die Vorlagen stehen dann in der Seitenleiste.");
+  } catch (e) {
+    alert("Der Link konnte nicht erzeugt werden: " + e.message);
+  }
+});
+document.getElementById("btnKopieren").addEventListener("click", async () => {
+  const b = document.getElementById("btnKopieren");
+  try {
+    await navigator.clipboard.writeText(linkFeld.value);
+    b.textContent = "Kopiert";
+  } catch (e) {
+    linkFeld.select(); linkFeld.setSelectionRange(0, 99999);
+    b.textContent = "Bitte mit Cmd+C kopieren";
+  }
+  setTimeout(() => { b.textContent = "Link kopieren"; }, 2500);
+});
+
+// Beim Öffnen: stecken Vorlagen im Link, werden sie angezeigt
+(async () => {
+  const h = location.hash.slice(1);
+  if (!/^[uv]1=/.test(h)) return;
+  const kopf = document.getElementById("linkHead"), liste = document.getElementById("linkList");
+  kopf.hidden = false;
+  try {
+    const d = JSON.parse(await auspacken(h));
+    const namen = Object.keys(d).filter(k => validLayout(d[k])).sort((a, b) => a.localeCompare(b, "de"));
+    if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
+    for (const n of namen) {
+      const b = document.createElement("button");
+      b.textContent = n;
+      b.addEventListener("click", () => applyLayout(d[n]));
+      liste.appendChild(b);
+    }
+    const uebernehmen = document.createElement("button");
+    uebernehmen.textContent = "In eigene Vorlagen übernehmen";
+    uebernehmen.addEventListener("click", () => {
+      const store = readStore();
+      for (const n of namen) store[n] = d[n];
+      writeStore(store); renderList();
+      uebernehmen.textContent = `${namen.length} übernommen`;
+      setTimeout(() => { uebernehmen.textContent = "In eigene Vorlagen übernehmen"; }, 2500);
+    });
+    liste.appendChild(uebernehmen);
+  } catch (e) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Der Link enthält keine lesbaren Vorlagen – vermutlich ist er beim " +
+      "Verschicken abgeschnitten worden. Am besten neu erzeugen lassen.";
+    liste.appendChild(p);
+  }
+})();
 
 /* ---------- Vereins-Vorlagen aus einer JSON-Datei ----------
    Standard: vorlagen.json neben der Seite.
