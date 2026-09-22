@@ -50,7 +50,23 @@
 
     <h2>Standard</h2>
     <button data-preset="grund">Grundstellung (Positionen 1–6)</button>
-    <button data-preset="grund6">Abwehr mit zurückgezogener 6</button>
+    <button data-preset="w">Annahme: W-Formation</button>
+
+    <h2>Abwehr mit vorgezogener 6</h2>
+    <button data-preset="v_dop4">Doppelblock – Angriff über deren 4</button>
+    <button data-preset="v_dop2">Doppelblock – Angriff über deren 2</button>
+    <button data-preset="v_dop3">Doppelblock – über die Mitte</button>
+    <button data-preset="v_ein4">Einerblock – Angriff über deren 4</button>
+    <button data-preset="v_ein2">Einerblock – Angriff über deren 2</button>
+    <button data-preset="v_ein3">Einerblock – über die Mitte</button>
+
+    <h2>Abwehr mit zurückgezogener 6</h2>
+    <button data-preset="z_dop4">Doppelblock – Angriff über deren 4</button>
+    <button data-preset="z_dop2">Doppelblock – Angriff über deren 2</button>
+    <button data-preset="z_dop3">Doppelblock – über die Mitte</button>
+    <button data-preset="z_ein4">Einerblock – Angriff über deren 4</button>
+    <button data-preset="z_ein2">Einerblock – Angriff über deren 2</button>
+    <button data-preset="z_ein3">Einerblock – über die Mitte</button>
 
     <h2>Eigene Vorlagen</h2>
     <div class="row">
@@ -293,21 +309,59 @@ function rename(p) {
 
 /* ---------- Vorlagen ---------- */
 // x = 0 (links) … 9 (rechts); y > 0 eigene Seite, y < 0 Gegner – jeweils Abstand zum Netz
+// Gegnerische Mannschaft, je nachdem worüber angegriffen wird
+const OPP_R = [["4",8.0,-1.3,"angreifer"],["3",4.6,-1.4,"gegner"],["2",1.4,-1.5,"gegner"],
+               ["1",1.6,-5.8,"gegner"],["6",4.6,-6.0,"gegner"],["5",7.6,-5.8,"gegner"]];
+const OPP_L = [["2",1.0,-1.3,"angreifer"],["3",4.4,-1.4,"gegner"],["4",7.6,-1.5,"gegner"],
+               ["1",1.6,-5.8,"gegner"],["6",4.6,-6.0,"gegner"],["5",7.4,-5.8,"gegner"]];
+const OPP_M = [["3",4.5,-1.3,"angreifer"],["4",7.7,-1.5,"gegner"],["2",1.3,-1.5,"gegner"],
+               ["1",1.6,-5.8,"gegner"],["6",4.6,-6.0,"gegner"],["5",7.6,-5.8,"gegner"]];
+const BALL_R = [7.8,-0.5], BALL_L = [1.2,-0.5], BALL_M = [4.7,-0.5];
+
 const PRESETS = {
   grund: {
     own: [["1",7.5,6.5],["2",7.5,1.5],["3",4.5,1.5],["4",1.5,1.5],["5",1.5,6.5],["6",4.5,6.5]],
     opp: OPP_HOME.map(([l,x,y]) => [l,x,y,"gegner"]),
     ball: [7.6,-0.6]
   },
-  // Klassische Abwehr mit zurückgezogener 6 gegen einen Angriff über deren Position 4
-  grund6: {
-    own: [["1",8.3,6.0],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.4],["5",1.3,6.6],["6",4.5,8.3]],
-    opp: [["4",8.0,-1.3,"angreifer"],["3",4.6,-1.4,"gegner"],["2",1.4,-1.5,"gegner"],
-          ["1",1.6,-5.8,"gegner"],["6",4.6,-6.0,"gegner"],["5",7.6,-5.8,"gegner"]],
-    ball: [7.8,-0.5]
-  }
+  w: {
+    own: [["1",6.2,7.0],["2",7.6,4.1],["Z",5.8,0.7],["4",1.4,4.1],["5",2.8,7.0],["6",4.5,4.4]],
+    opp: [["1",4.5,-9.6,"gegner"],["4",7.5,-1.5,"gegner"],["3",4.5,-1.5,"gegner"],
+          ["2",1.5,-1.5,"gegner"],["6",4.5,-6.0,"gegner"],["5",7.5,-6.0,"gegner"]],
+    ball: [4.9,-9.6]
+  },
+
+  // Vorgezogene 6: die 6 sichert hinter dem Block, 1 und 5 decken das hintere Feld
+  v_dop4: { own: [["1",8.1,7.4],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",6.7,2.8]],
+            opp: OPP_R, ball: BALL_R },
+  v_dop2: { own: [["5",0.9,7.4],["4",1.1,0.45],["3",2.1,0.45],["2",7.7,3.3],["1",7.6,7.4],["6",2.3,2.8]],
+            opp: OPP_L, ball: BALL_L },
+  v_dop3: { own: [["1",7.6,7.4],["2",5.3,0.45],["3",4.3,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",4.8,2.8]],
+            opp: OPP_M, ball: BALL_M },
+  v_ein4: { own: [["1",8.1,7.4],["2",7.9,0.45],["3",4.4,4.0],["4",1.2,3.3],["5",1.4,7.4],["6",7.0,2.8]],
+            opp: OPP_R, ball: BALL_R },
+  v_ein2: { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.6,4.0],["4",1.1,0.45],["5",0.9,7.4],["6",2.0,2.8]],
+            opp: OPP_L, ball: BALL_L },
+  v_ein3: { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.5,0.45],["4",1.2,3.3],["5",1.4,7.4],["6",4.5,2.8]],
+            opp: OPP_M, ball: BALL_M },
+
+  // Zurückgezogene 6: die 6 steht hinten in der Feldmitte
+  z_dop4: { own: [["1",8.3,6.0],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.4],["5",1.2,7.0],["6",4.5,8.3]],
+            opp: OPP_R, ball: BALL_R },
+  z_dop2: { own: [["5",0.7,6.0],["4",1.1,0.45],["3",2.1,0.45],["2",7.7,3.4],["1",7.8,7.0],["6",4.5,8.3]],
+            opp: OPP_L, ball: BALL_L },
+  z_dop3: { own: [["1",7.8,6.8],["2",5.3,0.45],["3",4.3,0.45],["4",1.3,3.3],["5",1.3,6.8],["6",4.5,8.3]],
+            opp: OPP_M, ball: BALL_M },
+  z_ein4: { own: [["1",8.2,6.3],["2",7.9,0.45],["3",5.0,2.6],["4",1.2,3.3],["5",1.3,7.0],["6",4.6,8.3]],
+            opp: OPP_R, ball: BALL_R },
+  z_ein2: { own: [["1",7.7,7.0],["2",7.8,3.3],["3",4.0,2.6],["4",1.1,0.45],["5",0.8,6.3],["6",4.4,8.3]],
+            opp: OPP_L, ball: BALL_L },
+  z_ein3: { own: [["1",7.7,7.2],["2",7.8,3.3],["3",4.5,0.45],["4",1.2,3.3],["5",1.3,7.2],["6",4.5,8.3]],
+            opp: OPP_M, ball: BALL_M }
 };
 function applyPreset(name) { applyLayout(PRESETS[name]); }
+document.querySelectorAll("button[data-preset]").forEach(b =>
+  b.addEventListener("click", () => applyPreset(b.dataset.preset)));
 
 function applyLayout(pr) {
   if (!pr) return;
