@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volleyball-Aufstellung</title>
+<style>
+  :root { --bg:#f4f1ea; --panel:#fff; --text:#222; --muted:#666; --line:#ddd; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { display:flex; gap:20px; padding:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+  .board { flex:0 1 500px; min-width:280px; }
+  svg { width:100%; height:auto; display:block; touch-action:none; user-select:none; -webkit-user-select:none; background:#2d6a86; border-radius:12px; }
+  .side { flex:0 1 290px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  h1 { font-size:18px; margin:0 0 6px; }
+  p.hint { color:var(--muted); font-size:13px; margin:0 0 10px; line-height:1.5; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 0 8px; }
+  button { display:block; width:100%; text-align:left; padding:8px 10px; margin:0 0 6px; border:1px solid var(--line); background:#fafafa; border-radius:8px; font:inherit; font-size:14px; cursor:pointer; color:var(--text); }
+  button:hover { background:#eef3fa; border-color:#b9cde6; }
+  label.chk { display:flex; gap:8px; align-items:center; font-size:14px; margin:7px 0; cursor:pointer; }
+  .piece { cursor:grab; }
+  .piece.drag { cursor:grabbing; }
+  .piece text { pointer-events:none; font-weight:600; }
+  .legend { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted); }
+  .legend span { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:-2px; margin-right:6px; }
+  .row { display:flex; gap:6px; margin-bottom:6px; }
+  input[type=text] { flex:1; min-width:0; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:14px; }
+  button.inline { display:inline-block; width:auto; margin:0; white-space:nowrap; }
+  .item { display:flex; gap:6px; margin-bottom:6px; }
+  .item .load { flex:1; margin:0; overflow:hidden; text-overflow:ellipsis; }
+  .item .del { width:auto; margin:0; padding:8px 10px; color:#a33; }
+  .empty { color:var(--muted); font-size:13px; margin:0 0 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="board"><svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg></div>
+  <div class="side">
+    <h1>Volleyball-Aufstellung</h1>
+    <p class="hint">Spieler, Angreifer und Ball mit Maus oder Finger verschieben. Ein Klick auf einen eigenen Spieler wechselt die Farbe (Spieler → Zuspieler → Libero), ein Doppelklick ändert die Beschriftung. Eigene Aufstellungen lassen sich unter „Eigene Vorlagen“ speichern.</p>
+
+    <h2>Vorlagen</h2>
+    <button data-preset="grund">Grundstellung (Positionen 1–6)</button>
+    <button data-preset="w">Annahme: W-Formation (Z auf 3)</button>
+
+    <h2>Abwehr mit Doppelblock</h2>
+    <button data-preset="abw4">Angriff über deren 4</button>
+    <button data-preset="abw2">Angriff über deren 2</button>
+    <button data-preset="abw3">Angriff über die Mitte</button>
+
+    <h2>Abwehr mit Einerblock</h2>
+    <button data-preset="ein4">Angriff über deren 4</button>
+    <button data-preset="ein2">Angriff über deren 2</button>
+    <button data-preset="ein3">Angriff über die Mitte</button>
+
+    <h2 id="clubHead" hidden>Vereins-Vorlagen</h2>
+    <div id="clubList"></div>
+
+    <h2>Eigene Vorlagen</h2>
+    <div class="row">
+      <input type="text" id="newName" placeholder="Name der Aufstellung" maxlength="40">
+      <button class="inline" id="btnSave">Speichern</button>
+    </div>
+    <div id="myList"></div>
+    <div class="row">
+      <button class="inline" id="btnExport">Als Datei sichern</button>
+      <button class="inline" id="btnImport">Datei laden</button>
+    </div>
+    <input type="file" id="fileIn" accept=".json,application/json" hidden>
+
+    <h2>Anzeige</h2>
+    <label class="chk"><input type="checkbox" id="optLines" checked> Schlagwinkel des Angreifers</label>
+    <label class="chk"><input type="checkbox" id="optBall" checked> Ball anzeigen</label>
+    <label class="chk"><input type="checkbox" id="optNums" checked> Positionsnummern im Feld</label>
+
+    <h2>Legende</h2>
+    <div class="legend">
+      <div><span style="background:#1f5fa8"></span>Eigener Spieler</div>
+      <div><span style="background:#e0703a"></span>Zuspieler (Beschriftung „Z“)</div>
+      <div><span style="background:#2f9a6a"></span>Libero (Beschriftung „L“)</div>
+      <div><span style="background:#c62828"></span>Gegnerischer Angreifer</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const M = 60, S = 40, NET = 420;           // Rand, Pixel pro Meter, Netz-y
+const px = x => M + x * S, py = y => NET + y * S;
+const svg = document.getElementById("court");
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e);
+  return e;
+}
+
+/* ---------- Spielfeld ---------- */
+el("rect", { x: px(0), y: py(-9), width: 9*S, height: 9*S, fill: "#e59c5a" });
+el("rect", { x: px(0), y: py(0),  width: 9*S, height: 9*S, fill: "#eeb071" });
+const W = { stroke: "#fff", "stroke-width": 2.5, fill: "none" };
+el("rect", Object.assign({ x: px(0), y: py(-9), width: 9*S, height: 18*S }, W));
+el("line", Object.assign({ x1: px(0), y1: py(-3), x2: px(9), y2: py(-3) }, W));
+el("line", Object.assign({ x1: px(0), y1: py(3),  x2: px(9), y2: py(3)  }, W));
+for (const y of [-3, 3]) for (const [a, b] of [[-1.5, 0], [9, 10.5]])
+  el("line", { x1: px(a), y1: py(y), x2: px(b), y2: py(y), stroke: "#fff", "stroke-width": 2, "stroke-dasharray": "6 6" });
+el("line", { x1: px(-0.6), y1: NET, x2: px(9.6), y2: NET, stroke: "#1b1b1b", "stroke-width": 6 });
+el("circle", { cx: px(-0.6), cy: NET, r: 6, fill: "#1b1b1b" });
+el("circle", { cx: px(9.6), cy: NET, r: 6, fill: "#1b1b1b" });
+const lbl = { fill: "#fff", "font-size": 15, "text-anchor": "middle", "font-weight": 600 };
+el("text", Object.assign({ x: 240, y: 38 }, lbl)).textContent = "Gegner";
+el("text", Object.assign({ x: 240, y: 816 }, lbl)).textContent = "Eigene Mannschaft";
+
+/* Positionsnummern (eigene Seite) */
+const numLayer = el("g", { opacity: 0.22 });
+[[4,1.5,1.5],[3,4.5,1.5],[2,7.5,1.5],[5,1.5,6],[6,4.5,6],[1,7.5,6]].forEach(([n,x,y]) => {
+  const t = el("text", { x: px(x), y: py(y), "font-size": 64, "font-weight": 700, fill: "#5a2a00",
+    "text-anchor": "middle", "dominant-baseline": "central" }, numLayer);
+  t.textContent = n;
+});
+
+/* Schlagwinkel-Linien */
+const lineLayer = el("g", {});
+
+/* ---------- Figuren ---------- */
+const pieceLayer = el("g", {});
+let pieces = [
+  ...[1,2,3,4,5,6].map(n => ({ id: "p"+n, type: "own", label: String(n), x: 0, y: 0 })),
+  { id: "att", type: "opp", label: "A", x: 7.8, y: -1.4 },
+  { id: "ball", type: "ball", label: "", x: 7.6, y: -0.6 }
+];
+
+const ROLE_COLORS = { spieler: "#1f5fa8", zuspieler: "#e0703a", libero: "#2f9a6a" };
+const ROLE_ORDER = ["spieler", "zuspieler", "libero"];
+function roleFromLabel(label) {
+  const l = (label || "").trim().toUpperCase();
+  if (l.startsWith("Z")) return "zuspieler";
+  if (l.startsWith("L")) return "libero";
+  return "spieler";
+}
+function colorFor(p) {
+  if (p.type === "opp") return "#c62828";
+  if (p.type === "ball") return "#ffd83d";
+  return ROLE_COLORS[p.role || roleFromLabel(p.label)];
+}
+function cycleRole(p) {
+  const cur = p.role || roleFromLabel(p.label);
+  p.role = ROLE_ORDER[(ROLE_ORDER.indexOf(cur) + 1) % ROLE_ORDER.length];
+  p.node.querySelector("circle").setAttribute("fill", colorFor(p));
+  save();
+}
+
+function buildPieces() {
+  pieceLayer.innerHTML = "";
+  for (const p of pieces) {
+    const g = el("g", { class: "piece", "data-id": p.id }, pieceLayer);
+    if (p.type === "ball") {
+      el("circle", { r: 10, fill: "#ffd83d", stroke: "#1b1b1b", "stroke-width": 1.5 }, g);
+      el("path", { d: "M-10 0 Q0 -5 10 0 M0 -10 Q-5 0 0 10", fill: "none", stroke: "#1b1b1b", "stroke-width": 1 }, g);
+    } else {
+      el("circle", { r: 19, fill: colorFor(p), stroke: "#fff", "stroke-width": 2.5 }, g);
+      const t = el("text", { "text-anchor": "middle", "dominant-baseline": "central", fill: "#fff",
+        "font-size": p.label.length > 2 ? 11 : 15 }, g);
+      t.textContent = p.label;
+    }
+    p.node = g;
+    g.addEventListener("pointerdown", startDrag);
+  }
+  render();
+}
+
+function render() {
+  for (const p of pieces) p.node.setAttribute("transform", `translate(${px(p.x)},${py(p.y)})`);
+  drawLines();
+  save();
+}
+
+function drawLines() {
+  lineLayer.innerHTML = "";
+  if (!document.getElementById("optLines").checked) return;
+  const a = pieces.find(p => p.id === "att");
+  const farSide = a.x > 4.5 ? 0 : 9;               // gegenüberliegende Seitenlinie
+  const nearSide = 9 - farSide;
+  const targets = [
+    { x: nearSide === 9 ? 8.7 : 0.3, y: 9, t: "Linie" },
+    { x: farSide, y: 9, t: "lange Diagonale" },
+    { x: farSide, y: 3.5, t: "kurze Diagonale" }
+  ];
+  for (const tg of targets) {
+    el("line", { x1: px(a.x), y1: py(a.y), x2: px(tg.x), y2: py(tg.y), stroke: "#c62828",
+      "stroke-width": 2, "stroke-dasharray": "7 5", opacity: 0.75 }, lineLayer);
+    const tx = el("text", { x: px(tg.x) + (tg.x < 4.5 ? 4 : -4), y: py(tg.y) + (tg.y === 9 ? 18 : -6),
+      "text-anchor": tg.x < 4.5 ? "start" : "end", fill: "#fff", "font-size": 12 }, lineLayer);
+    tx.textContent = tg.t;
+  }
+}
+
+/* ---------- Ziehen ---------- */
+let drag = null;
+function toMeters(evt) {
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return { x: (q.x - M) / S, y: (q.y - NET) / S };
+}
+function startDrag(evt) {
+  evt.preventDefault();
+  const p = pieces.find(p => p.id === evt.currentTarget.dataset.id);
+  const m = toMeters(evt);
+  drag = { p, dx: p.x - m.x, dy: p.y - m.y, sx: m.x, sy: m.y, moved: false };
+  p.node.classList.add("drag");
+  pieceLayer.appendChild(p.node);                     // nach vorne holen
+  svg.setPointerCapture(evt.pointerId);
+}
+svg.addEventListener("pointermove", evt => {
+  if (!drag) return;
+  const m = toMeters(evt), p = drag.p;
+  if (!drag.moved && Math.hypot(m.x - drag.sx, m.y - drag.sy) < 0.15) return;   // kleiner Wackler = Klick
+  drag.moved = true;
+  let x = m.x + drag.dx, y = m.y + drag.dy;
+  x = Math.max(-1.2, Math.min(10.2, x));
+  y = Math.max(-10.2, Math.min(10.2, y));
+  if (p.type === "own") y = Math.max(0.35, y);        // eigene Spieler bleiben auf eigener Seite
+  if (p.type === "opp") y = Math.min(-0.35, y);       // Angreifer bleibt beim Gegner
+  p.x = x; p.y = y;
+  render();
+});
+// Klick = Farbe/Rolle wechseln, Doppelklick = Beschriftung ändern (eigene Spieler)
+let clickTimer = null, lastTap = { id: null, t: 0 };
+function endDrag(evt) {
+  if (!drag) return;
+  const p = drag.p, wasClick = !drag.moved && evt.type === "pointerup";
+  p.node.classList.remove("drag");
+  drag = null;
+  if (!wasClick || p.type !== "own") return;
+  const now = Date.now();
+  if (lastTap.id === p.id && now - lastTap.t < 350) {
+    clearTimeout(clickTimer);
+    lastTap = { id: null, t: 0 };
+    rename(p);
+  } else {
+    lastTap = { id: p.id, t: now };
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => cycleRole(p), 350);
+  }
+}
+svg.addEventListener("pointerup", endDrag);
+svg.addEventListener("pointercancel", endDrag);
+
+function rename(p) {
+  const v = prompt("Beschriftung (max. 3 Zeichen, z. B. Z, L, MB, 4):", p.label);
+  if (v === null) return;
+  const nl = v.trim().slice(0, 3);
+  if (nl) {
+    p.label = nl;
+    const r = roleFromLabel(nl);
+    if (r !== "spieler") p.role = r;              // „Z“/„L“ setzen die Farbe automatisch
+  }
+  buildPieces();
+}
+
+/* ---------- Vorlagen ---------- */
+// Koordinaten in Metern: x = 0 (links) … 9 (rechts), y > 0 eigene Seite (Abstand zum Netz)
+const PRESETS = {
+  grund: { own: [["1",7.5,6.5],["2",7.5,1.5],["3",4.5,1.5],["4",1.5,1.5],["5",1.5,6.5],["6",4.5,6.5]],
+           att: [7.8,-1.4], ball: [7.6,-0.6] },
+  w:     { own: [["1",6.2,7.0],["2",7.6,4.1],["Z",5.8,0.7],["4",1.4,4.1],["5",2.8,7.0],["6",4.5,4.4]],
+           att: [4.5,-9.6], ball: [4.9,-9.6] },
+  // System „6 vorne“: die 6 steht als Blocksicherung hinter dem Block,
+  // 1 und 5 decken gemeinsam das hintere Feld (Linie und Diagonale)
+  abw4:  { own: [["1",8.1,7.4],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",6.7,2.8]],
+           att: [8.0,-1.3], ball: [7.8,-0.5] },
+  abw2:  { own: [["5",0.9,7.4],["4",1.1,0.45],["3",2.1,0.45],["2",7.7,3.3],["1",7.6,7.4],["6",2.3,2.8]],
+           att: [1.0,-1.3], ball: [1.2,-0.5] },
+  abw3:  { own: [["1",7.6,7.4],["2",5.3,0.45],["3",4.3,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",4.8,2.8]],
+           att: [4.5,-1.3], ball: [4.7,-0.5] },
+  // Einerblock: ein Blocker am Netz, 6 sichert dahinter, die anderen Vorderspieler lösen sich vom Netz
+  ein4:  { own: [["1",8.1,7.4],["2",7.9,0.45],["3",4.4,4.0],["4",1.2,3.3],["5",1.4,7.4],["6",7.0,2.8]],
+           att: [8.0,-1.3], ball: [7.8,-0.5] },
+  ein2:  { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.6,4.0],["4",1.1,0.45],["5",0.9,7.4],["6",2.0,2.8]],
+           att: [1.0,-1.3], ball: [1.2,-0.5] },
+  ein3:  { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.5,0.45],["4",1.2,3.3],["5",1.4,7.4],["6",4.5,2.8]],
+           att: [4.5,-1.3], ball: [4.7,-0.5] }
+};
+function applyPreset(name) {
+  applyLayout(PRESETS[name]);
+}
+function applyLayout(pr) {
+  if (!pr) return;
+  pr.own.forEach(([label, x, y, role], i) =>
+    Object.assign(pieces[i], { label, x, y, role: role || roleFromLabel(label) }));
+  Object.assign(pieces[6], { x: pr.att[0], y: pr.att[1] });
+  Object.assign(pieces[7], { x: pr.ball[0], y: pr.ball[1] });
+  buildPieces();
+}
+document.querySelectorAll("button[data-preset]").forEach(b =>
+  b.addEventListener("click", () => applyPreset(b.dataset.preset)));
+
+/* ---------- Eigene Vorlagen ---------- */
+const STORE = "vb-eigene-vorlagen";
+function readStore() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; }
+}
+function writeStore(o) {
+  try { localStorage.setItem(STORE, JSON.stringify(o)); }
+  catch (e) { alert("Konnte nicht gespeichert werden: " + e.message); }
+}
+function currentLayout() {
+  return {
+    own: pieces.slice(0, 6).map(p => [p.label, +p.x.toFixed(2), +p.y.toFixed(2), p.role || roleFromLabel(p.label)]),
+    att: [+pieces[6].x.toFixed(2), +pieces[6].y.toFixed(2)],
+    ball: [+pieces[7].x.toFixed(2), +pieces[7].y.toFixed(2)]
+  };
+}
+const myList = document.getElementById("myList");
+function renderList() {
+  const store = readStore();
+  const names = Object.keys(store).sort((a, b) => a.localeCompare(b, "de"));
+  myList.innerHTML = "";
+  if (!names.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Noch keine eigenen Vorlagen. Aufstellung hinschieben, Namen eingeben, speichern.";
+    myList.appendChild(p);
+    return;
+  }
+  for (const n of names) {
+    const row = document.createElement("div");
+    row.className = "item";
+    const load = document.createElement("button");
+    load.className = "load";
+    load.textContent = n;
+    load.title = "Laden – Doppelklick zum Überschreiben mit der aktuellen Aufstellung";
+    load.addEventListener("click", () => applyLayout(readStore()[n]));
+    load.addEventListener("dblclick", () => {
+      const s = readStore(); s[n] = currentLayout(); writeStore(s);
+    });
+    const del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "×";
+    del.title = "Löschen";
+    del.addEventListener("click", () => {
+      if (!confirm(`Vorlage „${n}“ löschen?`)) return;
+      const s = readStore(); delete s[n]; writeStore(s); renderList();
+    });
+    row.append(load, del);
+    myList.appendChild(row);
+  }
+}
+const newName = document.getElementById("newName");
+document.getElementById("btnSave").addEventListener("click", () => {
+  const n = newName.value.trim();
+  if (!n) { newName.focus(); return; }
+  const store = readStore();
+  if (store[n] && !confirm(`„${n}“ gibt es schon. Überschreiben?`)) return;
+  store[n] = currentLayout();
+  writeStore(store);
+  newName.value = "";
+  renderList();
+});
+newName.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnSave").click(); });
+
+document.getElementById("btnExport").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(readStore(), null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "volleyball-vorlagen.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+const fileIn = document.getElementById("fileIn");
+document.getElementById("btnImport").addEventListener("click", () => fileIn.click());
+fileIn.addEventListener("change", () => {
+  const f = fileIn.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("unerwartetes Format");
+      const store = readStore();
+      let n = 0;
+      for (const k in d) {
+        const v = d[k];
+        if (v && Array.isArray(v.own) && v.own.length === 6 && Array.isArray(v.att) && Array.isArray(v.ball)) {
+          store[k] = v; n++;
+        }
+      }
+      writeStore(store); renderList();
+      alert(n ? `${n} Vorlage(n) geladen.` : "Keine gültigen Vorlagen in der Datei gefunden.");
+    } catch (e) {
+      alert("Datei konnte nicht gelesen werden: " + e.message);
+    }
+    fileIn.value = "";
+  };
+  r.readAsText(f);
+});
+renderList();
+
+/* ---------- Vereins-Vorlagen aus vorlagen.json ---------- */
+function validLayout(v) {
+  return v && Array.isArray(v.own) && v.own.length === 6 && Array.isArray(v.att) && Array.isArray(v.ball);
+}
+fetch("vorlagen.json", { cache: "no-cache" })
+  .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
+  .then(d => {
+    const names = Object.keys(d).filter(k => validLayout(d[k]));
+    if (!names.length) return;
+    const list = document.getElementById("clubList");
+    for (const n of names) {
+      const b = document.createElement("button");
+      b.textContent = n;
+      b.addEventListener("click", () => applyLayout(d[n]));
+      list.appendChild(b);
+    }
+    document.getElementById("clubHead").hidden = false;
+  })
+  .catch(() => {});   // lokal geöffnet oder Datei fehlt – dann einfach ohne
+
+/* ---------- Optionen ---------- */
+const optBall = document.getElementById("optBall"), optNums = document.getElementById("optNums");
+document.getElementById("optLines").addEventListener("change", drawLines);
+optBall.addEventListener("change", () => pieces[7].node.style.display = optBall.checked ? "" : "none");
+optNums.addEventListener("change", () => numLayer.style.display = optNums.checked ? "" : "none");
+
+/* ---------- Letzte Aufstellung merken ---------- */
+function save() {
+  try { localStorage.setItem("vb-aufstellung", JSON.stringify(pieces.map(({id,label,x,y,role}) => ({id,label,x,y,role})))); } catch (e) {}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem("vb-aufstellung"));
+    if (!Array.isArray(d)) return false;
+    d.forEach(s => { const p = pieces.find(p => p.id === s.id); if (p) Object.assign(p, s); });
+    return true;
+  } catch (e) { return false; }
+}
+
+if (load()) buildPieces(); else applyPreset("grund");
+</script>
+</body>
+</html>
