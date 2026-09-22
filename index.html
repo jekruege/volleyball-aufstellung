@@ -536,7 +536,8 @@ if (quelle && !quelle.url) {
   fetch(quelle.url, { cache: "no-cache" })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
-      const namen = Object.keys(d).filter(k => validLayout(d[k]));
+      const namen = Object.keys(d).filter(k => validLayout(d[k]))
+                          .sort((a, b) => a.localeCompare(b, "de"));
       if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
       for (const n of namen) {
         const b = document.createElement("button");
