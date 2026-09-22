@@ -475,11 +475,20 @@ fileIn.addEventListener("change", () => {
     try {
       const d = JSON.parse(r.result);
       if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("unerwartetes Format");
+      const eintraege = Object.keys(d);
+      if (!eintraege.length) {
+        alert(`„${f.name}“ enthält keine Vorlagen – die Datei ist leer.\n\n` +
+              "Gesichert wird nur die Liste unter „Eigene Vorlagen“. War sie beim Sichern " +
+              "leer, ist auch die Datei leer.");
+        fileIn.value = ""; return;
+      }
       const store = readStore();
       let n = 0;
       for (const k in d) if (validLayout(d[k])) { store[k] = d[k]; n++; }
       writeStore(store); renderList();
-      alert(n ? `${n} Vorlage(n) geladen.` : "Keine gültigen Vorlagen in der Datei gefunden.");
+      alert(n ? `${n} Vorlage(n) geladen.`
+              : `In „${f.name}“ steht zwar etwas, aber kein Eintrag hat das erwartete ` +
+                "Format (own, opp und ball).");
     } catch (e) {
       alert("Datei konnte nicht gelesen werden: " + e.message);
     }
