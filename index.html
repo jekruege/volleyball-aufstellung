@@ -11,7 +11,7 @@
   .wrap { display:flex; gap:20px; padding:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
   .board { flex:0 1 500px; min-width:280px; }
   svg { width:100%; height:auto; display:block; touch-action:none; user-select:none; -webkit-user-select:none; background:#2d6a86; border-radius:12px; }
-  .side { flex:0 1 290px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .side { flex:0 1 300px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
   h1 { font-size:18px; margin:0 0 6px; }
   p.hint { color:var(--muted); font-size:13px; margin:0 0 10px; line-height:1.5; }
   h2 { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 0 8px; }
@@ -30,6 +30,9 @@
   .item .load { flex:1; margin:0; overflow:hidden; text-overflow:ellipsis; }
   .item .del { width:auto; margin:0; padding:8px 10px; color:#a33; }
   .empty { color:var(--muted); font-size:13px; margin:0 0 8px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips button { width:auto; margin:0; padding:5px 10px; border-radius:999px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .chips .dot { width:11px; height:11px; border-radius:50%; display:inline-block; }
 </style>
 </head>
 <body>
@@ -37,24 +40,17 @@
   <div class="board"><svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg></div>
   <div class="side">
     <h1>Volleyball-Aufstellung</h1>
-    <p class="hint">Spieler, Angreifer und Ball mit Maus oder Finger verschieben. Ein Klick auf einen eigenen Spieler wechselt die Farbe (Spieler → Zuspieler → Libero), ein Doppelklick ändert die Beschriftung. Eigene Aufstellungen lassen sich unter „Eigene Vorlagen“ speichern.</p>
+    <p class="hint">Alle Figuren lassen sich mit Maus oder Finger verschieben. Ein <b>Klick</b> wechselt die Rolle und damit die Farbe, der letzte Schritt blendet die Figur aus. Ein <b>Doppelklick</b> ändert die Beschriftung.</p>
 
-    <h2>Vorlagen</h2>
-    <button data-preset="grund">Grundstellung (Positionen 1–6)</button>
-    <button data-preset="w">Annahme: W-Formation (Z auf 3)</button>
-
-    <h2>Abwehr mit Doppelblock</h2>
-    <button data-preset="abw4">Angriff über deren 4</button>
-    <button data-preset="abw2">Angriff über deren 2</button>
-    <button data-preset="abw3">Angriff über die Mitte</button>
-
-    <h2>Abwehr mit Einerblock</h2>
-    <button data-preset="ein4">Angriff über deren 4</button>
-    <button data-preset="ein2">Angriff über deren 2</button>
-    <button data-preset="ein3">Angriff über die Mitte</button>
+    <h2 id="hiddenHead" hidden>Ausgeblendet</h2>
+    <div class="chips" id="hiddenList"></div>
 
     <h2 id="clubHead" hidden>Vereins-Vorlagen</h2>
     <div id="clubList"></div>
+
+    <h2>Standard</h2>
+    <button data-preset="grund">Grundstellung (Positionen 1–6)</button>
+    <button data-preset="grund6">Abwehr mit zurückgezogener 6</button>
 
     <h2>Eigene Vorlagen</h2>
     <div class="row">
@@ -76,8 +72,9 @@
     <h2>Legende</h2>
     <div class="legend">
       <div><span style="background:#1f5fa8"></span>Eigener Spieler</div>
-      <div><span style="background:#e0703a"></span>Zuspieler (Beschriftung „Z“)</div>
-      <div><span style="background:#2f9a6a"></span>Libero (Beschriftung „L“)</div>
+      <div><span style="background:#e0703a"></span>Zuspieler</div>
+      <div><span style="background:#2f9a6a"></span>Libero</div>
+      <div><span style="background:#78838f"></span>Gegnerischer Spieler</div>
       <div><span style="background:#c62828"></span>Gegnerischer Angreifer</div>
     </div>
   </div>
@@ -124,38 +121,48 @@ const numLayer = el("g", { opacity: 0.22 });
 const lineLayer = el("g", {});
 
 /* ---------- Figuren ---------- */
+// Gegner: Position 4 liegt von uns aus gesehen rechts, 2 links
+const OPP_HOME = [["4",7.5,-1.5],["3",4.5,-1.5],["2",1.5,-1.5],["1",1.5,-6],["6",4.5,-6],["5",7.5,-6]];
 const pieceLayer = el("g", {});
-let pieces = [
-  ...[1,2,3,4,5,6].map(n => ({ id: "p"+n, type: "own", label: String(n), x: 0, y: 0 })),
-  { id: "att", type: "opp", label: "A", x: 7.8, y: -1.4 },
-  { id: "ball", type: "ball", label: "", x: 7.6, y: -0.6 }
+const pieces = [
+  ...[1,2,3,4,5,6].map(n => ({ id: "p"+n, side: "own", label: String(n), x: 0, y: 0, role: "spieler" })),
+  ...OPP_HOME.map(([l,x,y], i) => ({ id: "o"+(i+1), side: "opp", label: l, x, y, role: "gegner" })),
+  { id: "ball", side: "ball", label: "", x: 7.6, y: -0.6, role: "ball" }
 ];
+const own = pieces.filter(p => p.side === "own");
+const opp = pieces.filter(p => p.side === "opp");
+const ball = pieces[pieces.length - 1];
 
-const ROLE_COLORS = { spieler: "#1f5fa8", zuspieler: "#e0703a", libero: "#2f9a6a" };
-const ROLE_ORDER = ["spieler", "zuspieler", "libero"];
-function roleFromLabel(label) {
+const COLORS = { spieler: "#1f5fa8", zuspieler: "#e0703a", libero: "#2f9a6a",
+                 gegner: "#78838f", angreifer: "#c62828" };
+const CYCLE = { own: ["spieler", "zuspieler", "libero", "versteckt"],
+                opp: ["gegner", "angreifer", "versteckt"] };
+function roleFromLabel(label, side) {
   const l = (label || "").trim().toUpperCase();
+  if (side === "opp") return "gegner";
   if (l.startsWith("Z")) return "zuspieler";
   if (l.startsWith("L")) return "libero";
   return "spieler";
 }
 function colorFor(p) {
-  if (p.type === "opp") return "#c62828";
-  if (p.type === "ball") return "#ffd83d";
-  return ROLE_COLORS[p.role || roleFromLabel(p.label)];
+  if (p.side === "ball") return "#ffd83d";
+  return COLORS[p.role] || COLORS.spieler;
 }
 function cycleRole(p) {
-  const cur = p.role || roleFromLabel(p.label);
-  p.role = ROLE_ORDER[(ROLE_ORDER.indexOf(cur) + 1) % ROLE_ORDER.length];
-  p.node.querySelector("circle").setAttribute("fill", colorFor(p));
-  save();
+  const c = CYCLE[p.side];
+  if (!c) return;
+  p.role = c[(c.indexOf(p.role) + 1) % c.length];
+  if (p.role === "angreifer")                       // nur ein Angreifer gleichzeitig
+    for (const o of opp) if (o !== p && o.role === "angreifer") o.role = "gegner";
+  buildPieces();
 }
 
 function buildPieces() {
   pieceLayer.innerHTML = "";
   for (const p of pieces) {
+    if (p.role === "versteckt") { p.node = null; continue; }
     const g = el("g", { class: "piece", "data-id": p.id }, pieceLayer);
-    if (p.type === "ball") {
+    if (p.side === "ball") {
       el("circle", { r: 10, fill: "#ffd83d", stroke: "#1b1b1b", "stroke-width": 1.5 }, g);
       el("path", { d: "M-10 0 Q0 -5 10 0 M0 -10 Q-5 0 0 10", fill: "none", stroke: "#1b1b1b", "stroke-width": 1 }, g);
     } else {
@@ -167,23 +174,46 @@ function buildPieces() {
     p.node = g;
     g.addEventListener("pointerdown", startDrag);
   }
+  ball.node && (ball.node.style.display = document.getElementById("optBall").checked ? "" : "none");
+  renderHidden();
   render();
 }
 
 function render() {
-  for (const p of pieces) p.node.setAttribute("transform", `translate(${px(p.x)},${py(p.y)})`);
+  for (const p of pieces) if (p.node) p.node.setAttribute("transform", `translate(${px(p.x)},${py(p.y)})`);
   drawLines();
   save();
+}
+
+/* ---------- Ausgeblendete Figuren ---------- */
+const hiddenList = document.getElementById("hiddenList");
+function renderHidden() {
+  const hid = pieces.filter(p => p.role === "versteckt");
+  hiddenList.innerHTML = "";
+  document.getElementById("hiddenHead").hidden = !hid.length;
+  for (const p of hid) {
+    const b = document.createElement("button");
+    b.title = "Wieder einblenden";
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.background = p.side === "own" ? COLORS.spieler : COLORS.gegner;
+    b.append(dot, document.createTextNode((p.side === "own" ? "" : "Gegner ") + p.label));
+    b.addEventListener("click", () => {
+      p.role = p.side === "own" ? "spieler" : "gegner";
+      buildPieces();
+    });
+    hiddenList.appendChild(b);
+  }
 }
 
 function drawLines() {
   lineLayer.innerHTML = "";
   if (!document.getElementById("optLines").checked) return;
-  const a = pieces.find(p => p.id === "att");
+  const a = opp.find(p => p.role === "angreifer");
+  if (!a) return;
   const farSide = a.x > 4.5 ? 0 : 9;               // gegenüberliegende Seitenlinie
-  const nearSide = 9 - farSide;
   const targets = [
-    { x: nearSide === 9 ? 8.7 : 0.3, y: 9, t: "Linie" },
+    { x: farSide === 9 ? 0.3 : 8.7, y: 9, t: "Linie" },
     { x: farSide, y: 9, t: "lange Diagonale" },
     { x: farSide, y: 3.5, t: "kurze Diagonale" }
   ];
@@ -218,22 +248,21 @@ svg.addEventListener("pointermove", evt => {
   const m = toMeters(evt), p = drag.p;
   if (!drag.moved && Math.hypot(m.x - drag.sx, m.y - drag.sy) < 0.15) return;   // kleiner Wackler = Klick
   drag.moved = true;
-  let x = m.x + drag.dx, y = m.y + drag.dy;
-  x = Math.max(-1.2, Math.min(10.2, x));
-  y = Math.max(-10.2, Math.min(10.2, y));
-  if (p.type === "own") y = Math.max(0.35, y);        // eigene Spieler bleiben auf eigener Seite
-  if (p.type === "opp") y = Math.min(-0.35, y);       // Angreifer bleibt beim Gegner
+  let x = Math.max(-1.2, Math.min(10.2, m.x + drag.dx));
+  let y = Math.max(-10.2, Math.min(10.2, m.y + drag.dy));
+  if (p.side === "own") y = Math.max(0.35, y);        // eigene Spieler bleiben auf eigener Seite
+  if (p.side === "opp") y = Math.min(-0.35, y);       // Gegner bleiben drüben
   p.x = x; p.y = y;
   render();
 });
-// Klick = Farbe/Rolle wechseln, Doppelklick = Beschriftung ändern (eigene Spieler)
+// Klick = Rolle/Farbe wechseln, Doppelklick = Beschriftung ändern
 let clickTimer = null, lastTap = { id: null, t: 0 };
 function endDrag(evt) {
   if (!drag) return;
   const p = drag.p, wasClick = !drag.moved && evt.type === "pointerup";
-  p.node.classList.remove("drag");
+  p.node && p.node.classList.remove("drag");
   drag = null;
-  if (!wasClick || p.type !== "own") return;
+  if (!wasClick || p.side === "ball") return;
   const now = Date.now();
   if (lastTap.id === p.id && now - lastTap.t < 350) {
     clearTimeout(clickTimer);
@@ -254,65 +283,68 @@ function rename(p) {
   const nl = v.trim().slice(0, 3);
   if (nl) {
     p.label = nl;
-    const r = roleFromLabel(nl);
-    if (r !== "spieler") p.role = r;              // „Z“/„L“ setzen die Farbe automatisch
+    if (p.side === "own") {
+      const r = roleFromLabel(nl, "own");
+      if (r !== "spieler") p.role = r;              // „Z“/„L“ setzen die Farbe automatisch
+    }
   }
   buildPieces();
 }
 
 /* ---------- Vorlagen ---------- */
-// Koordinaten in Metern: x = 0 (links) … 9 (rechts), y > 0 eigene Seite (Abstand zum Netz)
+// x = 0 (links) … 9 (rechts); y > 0 eigene Seite, y < 0 Gegner – jeweils Abstand zum Netz
 const PRESETS = {
-  grund: { own: [["1",7.5,6.5],["2",7.5,1.5],["3",4.5,1.5],["4",1.5,1.5],["5",1.5,6.5],["6",4.5,6.5]],
-           att: [7.8,-1.4], ball: [7.6,-0.6] },
-  w:     { own: [["1",6.2,7.0],["2",7.6,4.1],["Z",5.8,0.7],["4",1.4,4.1],["5",2.8,7.0],["6",4.5,4.4]],
-           att: [4.5,-9.6], ball: [4.9,-9.6] },
-  // System „6 vorne“: die 6 steht als Blocksicherung hinter dem Block,
-  // 1 und 5 decken gemeinsam das hintere Feld (Linie und Diagonale)
-  abw4:  { own: [["1",8.1,7.4],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",6.7,2.8]],
-           att: [8.0,-1.3], ball: [7.8,-0.5] },
-  abw2:  { own: [["5",0.9,7.4],["4",1.1,0.45],["3",2.1,0.45],["2",7.7,3.3],["1",7.6,7.4],["6",2.3,2.8]],
-           att: [1.0,-1.3], ball: [1.2,-0.5] },
-  abw3:  { own: [["1",7.6,7.4],["2",5.3,0.45],["3",4.3,0.45],["4",1.3,3.3],["5",1.4,7.4],["6",4.8,2.8]],
-           att: [4.5,-1.3], ball: [4.7,-0.5] },
-  // Einerblock: ein Blocker am Netz, 6 sichert dahinter, die anderen Vorderspieler lösen sich vom Netz
-  ein4:  { own: [["1",8.1,7.4],["2",7.9,0.45],["3",4.4,4.0],["4",1.2,3.3],["5",1.4,7.4],["6",7.0,2.8]],
-           att: [8.0,-1.3], ball: [7.8,-0.5] },
-  ein2:  { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.6,4.0],["4",1.1,0.45],["5",0.9,7.4],["6",2.0,2.8]],
-           att: [1.0,-1.3], ball: [1.2,-0.5] },
-  ein3:  { own: [["1",7.6,7.4],["2",7.8,3.3],["3",4.5,0.45],["4",1.2,3.3],["5",1.4,7.4],["6",4.5,2.8]],
-           att: [4.5,-1.3], ball: [4.7,-0.5] }
+  grund: {
+    own: [["1",7.5,6.5],["2",7.5,1.5],["3",4.5,1.5],["4",1.5,1.5],["5",1.5,6.5],["6",4.5,6.5]],
+    opp: OPP_HOME.map(([l,x,y]) => [l,x,y,"gegner"]),
+    ball: [7.6,-0.6]
+  },
+  // Klassische Abwehr mit zurückgezogener 6 gegen einen Angriff über deren Position 4
+  grund6: {
+    own: [["1",8.3,6.0],["2",7.9,0.45],["3",6.9,0.45],["4",1.3,3.4],["5",1.3,6.6],["6",4.5,8.3]],
+    opp: [["4",8.0,-1.3,"angreifer"],["3",4.6,-1.4,"gegner"],["2",1.4,-1.5,"gegner"],
+          ["1",1.6,-5.8,"gegner"],["6",4.6,-6.0,"gegner"],["5",7.6,-5.8,"gegner"]],
+    ball: [7.8,-0.5]
+  }
 };
-function applyPreset(name) {
-  applyLayout(PRESETS[name]);
-}
+function applyPreset(name) { applyLayout(PRESETS[name]); }
+
 function applyLayout(pr) {
   if (!pr) return;
   pr.own.forEach(([label, x, y, role], i) =>
-    Object.assign(pieces[i], { label, x, y, role: role || roleFromLabel(label) }));
-  Object.assign(pieces[6], { x: pr.att[0], y: pr.att[1] });
-  Object.assign(pieces[7], { x: pr.ball[0], y: pr.ball[1] });
+    Object.assign(own[i], { label, x, y, role: role || roleFromLabel(label, "own") }));
+  if (Array.isArray(pr.opp)) {
+    pr.opp.forEach(([label, x, y, role], i) =>
+      Object.assign(opp[i], { label, x, y, role: role || "gegner" }));
+  } else if (Array.isArray(pr.att)) {
+    // ältere Vorlagen: nur ein Angreifer, die übrigen Gegner ausblenden
+    Object.assign(opp[0], { label: "4", x: pr.att[0], y: pr.att[1], role: "angreifer" });
+    OPP_HOME.forEach(([l, x, y], i) => {
+      if (i > 0) Object.assign(opp[i], { label: l, x, y, role: "versteckt" });
+    });
+  }
+  if (Array.isArray(pr.ball)) Object.assign(ball, { x: pr.ball[0], y: pr.ball[1] });
   buildPieces();
 }
-document.querySelectorAll("button[data-preset]").forEach(b =>
-  b.addEventListener("click", () => applyPreset(b.dataset.preset)));
 
 /* ---------- Eigene Vorlagen ---------- */
 const STORE = "vb-eigene-vorlagen";
-function readStore() {
-  try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; }
-}
+const readStore = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
 function writeStore(o) {
   try { localStorage.setItem(STORE, JSON.stringify(o)); }
   catch (e) { alert("Konnte nicht gespeichert werden: " + e.message); }
 }
+const r2 = v => +v.toFixed(2);
 function currentLayout() {
   return {
-    own: pieces.slice(0, 6).map(p => [p.label, +p.x.toFixed(2), +p.y.toFixed(2), p.role || roleFromLabel(p.label)]),
-    att: [+pieces[6].x.toFixed(2), +pieces[6].y.toFixed(2)],
-    ball: [+pieces[7].x.toFixed(2), +pieces[7].y.toFixed(2)]
+    own: own.map(p => [p.label, r2(p.x), r2(p.y), p.role]),
+    opp: opp.map(p => [p.label, r2(p.x), r2(p.y), p.role]),
+    ball: [r2(ball.x), r2(ball.y)]
   };
 }
+const validLayout = v => v && Array.isArray(v.own) && v.own.length === 6 &&
+  (Array.isArray(v.opp) || Array.isArray(v.att));
+
 const myList = document.getElementById("myList");
 function renderList() {
   const store = readStore();
@@ -381,12 +413,7 @@ fileIn.addEventListener("change", () => {
       if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("unerwartetes Format");
       const store = readStore();
       let n = 0;
-      for (const k in d) {
-        const v = d[k];
-        if (v && Array.isArray(v.own) && v.own.length === 6 && Array.isArray(v.att) && Array.isArray(v.ball)) {
-          store[k] = v; n++;
-        }
-      }
+      for (const k in d) if (validLayout(d[k])) { store[k] = d[k]; n++; }
       writeStore(store); renderList();
       alert(n ? `${n} Vorlage(n) geladen.` : "Keine gültigen Vorlagen in der Datei gefunden.");
     } catch (e) {
@@ -398,46 +425,84 @@ fileIn.addEventListener("change", () => {
 });
 renderList();
 
-/* ---------- Vereins-Vorlagen aus vorlagen.json ---------- */
-function validLayout(v) {
-  return v && Array.isArray(v.own) && v.own.length === 6 && Array.isArray(v.att) && Array.isArray(v.ball);
+/* ---------- Vereins-Vorlagen aus einer JSON-Datei ----------
+   Standard: vorlagen.json neben der Seite.
+   Andere Datei über den Link angeben, z. B.
+     ?vorlagen=damen2.json
+     ?vorlagen=https://raw.githubusercontent.com/jekruege/volleyball-aufstellung/main/damen2.json
+   Erlaubt sind Dateien neben der Seite sowie GitHub-Adressen.           */
+const ALLOWED_HOSTS = ["raw.githubusercontent.com", "gist.githubusercontent.com", "github.io"];
+function vorlagenQuelle() {
+  const q = (new URLSearchParams(location.search).get("vorlagen") || "").trim();
+  if (!q) return { url: "vorlagen.json", name: "" };
+  let u;
+  try { u = new URL(q, location.href); }
+  catch (e) { return { url: null, name: q, fehler: "keine gültige Adresse" }; }
+  if (u.protocol !== "https:" && u.protocol !== "http:" && u.protocol !== "file:")
+    return { url: null, name: q, fehler: "nicht unterstützte Adresse" };
+  const eigen = u.origin === location.origin;
+  const erlaubt = ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith("." + h));
+  if (!eigen && !erlaubt)
+    return { url: null, name: q, fehler: "nur Dateien neben der Seite oder von GitHub" };
+  return { url: u.href, name: decodeURIComponent(u.pathname.split("/").pop() || q) };
 }
-fetch("vorlagen.json", { cache: "no-cache" })
-  .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
-  .then(d => {
-    const names = Object.keys(d).filter(k => validLayout(d[k]));
-    if (!names.length) return;
-    const list = document.getElementById("clubList");
-    for (const n of names) {
-      const b = document.createElement("button");
-      b.textContent = n;
-      b.addEventListener("click", () => applyLayout(d[n]));
-      list.appendChild(b);
-    }
-    document.getElementById("clubHead").hidden = false;
-  })
-  .catch(() => {});   // lokal geöffnet oder Datei fehlt – dann einfach ohne
+const quelle = vorlagenQuelle();
+const clubHead = document.getElementById("clubHead"), clubList = document.getElementById("clubList");
+function clubHinweis(text) {
+  clubHead.textContent = "Vereins-Vorlagen";
+  clubHead.hidden = false;
+  const p = document.createElement("p");
+  p.className = "empty";
+  p.textContent = text;
+  clubList.appendChild(p);
+}
+if (!quelle.url) {
+  clubHinweis(`„${quelle.name}“ wird nicht geladen: ${quelle.fehler}.`);
+} else {
+  fetch(quelle.url, { cache: "no-cache" })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => {
+      const namen = Object.keys(d).filter(k => validLayout(d[k]));
+      if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
+      for (const n of namen) {
+        const b = document.createElement("button");
+        b.textContent = n;
+        b.addEventListener("click", () => applyLayout(d[n]));
+        clubList.appendChild(b);
+      }
+      clubHead.textContent = quelle.name && quelle.name !== "vorlagen.json"
+        ? "Vorlagen aus " + quelle.name : "Vereins-Vorlagen";
+      clubHead.hidden = false;
+    })
+    .catch(err => {
+      // Standarddatei fehlt lautlos – dann bleiben die Standardvorlagen stehen
+      if (quelle.name) clubHinweis(`„${quelle.name}“ konnte nicht geladen werden (${err.message}).`);
+    });
+}
 
 /* ---------- Optionen ---------- */
-const optBall = document.getElementById("optBall"), optNums = document.getElementById("optNums");
 document.getElementById("optLines").addEventListener("change", drawLines);
-optBall.addEventListener("change", () => pieces[7].node.style.display = optBall.checked ? "" : "none");
-optNums.addEventListener("change", () => numLayer.style.display = optNums.checked ? "" : "none");
+document.getElementById("optBall").addEventListener("change", e => {
+  if (ball.node) ball.node.style.display = e.target.checked ? "" : "none";
+});
+document.getElementById("optNums").addEventListener("change", e => {
+  numLayer.style.display = e.target.checked ? "" : "none";
+});
 
-/* ---------- Letzte Aufstellung merken ---------- */
+/* ---------- Letzten Stand merken ---------- */
 function save() {
-  try { localStorage.setItem("vb-aufstellung", JSON.stringify(pieces.map(({id,label,x,y,role}) => ({id,label,x,y,role})))); } catch (e) {}
+  try { localStorage.setItem("vb-aufstellung", JSON.stringify(currentLayout())); } catch (e) {}
 }
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem("vb-aufstellung"));
-    if (!Array.isArray(d)) return false;
-    d.forEach(s => { const p = pieces.find(p => p.id === s.id); if (p) Object.assign(p, s); });
+    if (!validLayout(d)) return false;
+    applyLayout(d);
     return true;
   } catch (e) { return false; }
 }
 
-if (load()) buildPieces(); else applyPreset("grund");
+if (!load()) applyPreset("grund");
 </script>
 </body>
 </html>
