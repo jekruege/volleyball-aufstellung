@@ -28,51 +28,16 @@ Live: https://jekruege.github.io/volleyball-aufstellung/
 Die zuletzt gezeigte Aufstellung merkt sich der Browser und stellt sie beim
 nächsten Öffnen wieder her.
 
-## Mehrere Vorlagensätze über den Link
+## Vorlagen anlegen oder ändern
 
-Ohne Zusatz zeigt die Seite nur die eingebauten Standardvorlagen. Mit dem
-Parameter `?vorlagen=` kommt ein eigener Satz dazu – praktisch, um jeder
-Mannschaft ihren eigenen Link zu geben.
+1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.
+2. „Als Datei sichern" klicken – es entsteht `volleyball-vorlagen.json`.
 
-Die gemeinsamen Vorlagen aus diesem Repository:
-
-```
-https://jekruege.github.io/volleyball-aufstellung/?vorlagen=vorlagen.json
-```
-
-Ein anderer Satz, ebenfalls hier abgelegt:
-
-```
-https://jekruege.github.io/volleyball-aufstellung/?vorlagen=damen2.json
-```
-
-Datei irgendwo sonst auf GitHub (vollständige Roh-Adresse):
-
-```
-https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://raw.githubusercontent.com/jekruege/volleyball-aufstellung/main/damen2.json
-```
-
-Die Überschrift in der Seitenleiste zeigt dann den Dateinamen an, damit im
-Training klar ist, welcher Satz geladen ist.
-
-Aus Sicherheitsgründen werden nur Dateien neben der Seite und GitHub-Adressen
-geladen (`github.com`, `raw.githubusercontent.com`, `gist.github.com`,
-`gist.githubusercontent.com`, `*.github.io`). Andere Adressen lehnt die Seite
-mit einem Hinweis ab, damit ein präparierter Link keine fremden Inhalte
-einschleusen kann.
-
-Die Adresse darf dabei so aussehen, wie sie im Browser steht – die Seite rechnet
-sie selbst auf die Roh-Adresse um. Diese drei Formen funktionieren alle:
-
-```
-https://gist.github.com/name/abc123
-https://gist.github.com/name/abc123/raw/.../vorlagen.json
-https://github.com/jekruege/volleyball-aufstellung/blob/main/vorlagen.json
-```
+Über „Datei laden" lässt sich so eine Datei auch wieder in den eigenen Browser
+einlesen – gleichnamige Vorlagen werden ersetzt, die übrigen bleiben erhalten.
 
 ## Vorlagen als Link weitergeben
 
-Der schnellste Weg, ganz ohne GitHub: „Link erzeugen" unter „Eigene Vorlagen".
 Die Seite packt alle eigenen Vorlagen zusammen und hängt sie an die Adresse an.
 
 - **Link kopieren** legt ihn in die Zwischenablage – etwa für WhatsApp oder ein
@@ -96,8 +61,7 @@ umbrechen. Ab etwa 15 Vorlagen ist die Datei oder ein Gist der bessere Weg.
 
 ## Eigene Vorlagen ohne Zugriff aufs Repository teilen (Gist)
 
-Wer selbst Vorlagen beisteuern will, braucht keinen Zugang zu diesem
-Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
+Wer größere Vorlagen nutzen will, kann Gist nutzen – eine Art Notizzettel bei GitHub:
 
 1. In der Seite alle Aufstellungen bauen und unter „Eigene Vorlagen" speichern.
 2. Auf „Als Datei sichern" klicken. Die Datei landet im Download-Ordner.
@@ -106,8 +70,9 @@ Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
    als Dateinamen `vorlagen.json` eintragen und unten auf **Create secret gist**
    klicken. Secret heißt: nicht öffentlich auffindbar, aber für jeden mit dem
    Link lesbar. **Create public gist** geht genauso.
-5. Die Adresse aus der Adresszeile kopieren und an den Link anhängen:
+5. Die Adresse aus der Adresszeile kopieren und an den Link https://jekruege.github.io/volleyball-aufstellung/?vorlagen= anhängen:
 
+Beispielsweise:
 ```
 https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://gist.github.com/name/abc123
 ```
@@ -119,19 +84,19 @@ und alle sehen beim nächsten Aufruf den neuen Stand.
 Wer gar kein GitHub-Konto hat, schickt einfach die gesicherte Datei weiter; sie
 lässt sich in jeder Seite über „Datei laden" einlesen.
 
-## Vorlagen anlegen oder ändern
 
-1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.
-2. „Als Datei sichern" klicken – es entsteht `volleyball-vorlagen.json`.
-3. Die Datei hier im Repository hochladen: als `vorlagen.json`, wenn sie der
-   gemeinsame Satz sein soll, sonst unter eigenem Namen wie `damen2.json`. In
-   beiden Fällen wird sie über `?vorlagen=` im Link aufgerufen.
+## Mehrere Vorlagensätze über den Link
 
-Nach ein bis zwei Minuten liefert GitHub Pages den neuen Stand aus. Wer die
-Seite vorher offen hatte, muss einmal neu laden.
+Ohne Zusatz zeigt die Seite nur die eingebauten Standardvorlagen. Mit dem
+Parameter `?vorlagen=` kommt ein eigener Satz dazu – praktisch, um jeder
+Mannschaft ihren eigenen Link zu geben.
 
-Über „Datei laden" lässt sich so eine Datei auch wieder in den eigenen Browser
-einlesen – gleichnamige Vorlagen werden ersetzt, die übrigen bleiben erhalten.
+Die gemeinsamen Vorlagen aus diesem Repository:
+
+```
+https://jekruege.github.io/volleyball-aufstellung/?vorlagen=Schneeren.json
+```
+
 
 ## Format der Vorlagen-Datei
 
