@@ -33,6 +33,8 @@
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
   .chips button { width:auto; margin:0; padding:5px 10px; border-radius:999px; font-size:13px; display:flex; align-items:center; gap:6px; }
   .chips .dot { width:11px; height:11px; border-radius:50%; display:inline-block; }
+  .doku { margin:18px 0 0; padding-top:14px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); line-height:1.5; }
+  .doku a { color:#1f5fa8; }
 </style>
 </head>
 <body>
@@ -93,6 +95,10 @@
       <div><span style="background:#78838f"></span>Gegnerischer Spieler</div>
       <div><span style="background:#c62828"></span>Gegnerischer Angreifer</div>
     </div>
+
+    <p class="doku"><a href="https://github.com/jekruege/volleyball-aufstellung#readme"
+       target="_blank" rel="noopener">Anleitung und Hilfe</a> – Vorlagen anlegen,
+       weitergeben und über den Link laden</p>
   </div>
 </div>
 
@@ -504,7 +510,20 @@ renderList();
      ?vorlagen=damen2.json
      ?vorlagen=https://raw.githubusercontent.com/jekruege/volleyball-aufstellung/main/damen2.json
    Erlaubt sind Dateien neben der Seite sowie GitHub-Adressen.           */
-const ALLOWED_HOSTS = ["raw.githubusercontent.com", "gist.githubusercontent.com", "github.io"];
+const ALLOWED_HOSTS = ["raw.githubusercontent.com", "gist.githubusercontent.com",
+                       "gist.github.com", "github.com", "github.io"];
+// Übliche GitHub-Adressen auf die Roh-Adresse umbiegen, damit auch der Link aus
+// der Adresszeile funktioniert und nicht nur die „Raw“-Adresse.
+function rohAdresse(u) {
+  const t = u.pathname.split("/").filter(Boolean);
+  if (u.hostname === "gist.github.com" && t.length >= 2) {
+    const rest = t.includes("raw") ? t.slice(t.indexOf("raw")).join("/") : "raw";
+    return `https://gist.githubusercontent.com/${t[0]}/${t[1]}/${rest}`;
+  }
+  if (u.hostname === "github.com" && t[2] === "blob")
+    return `https://raw.githubusercontent.com/${t[0]}/${t[1]}/${t.slice(3).join("/")}`;
+  return u.href;
+}
 function vorlagenQuelle() {
   const q = (new URLSearchParams(location.search).get("vorlagen") || "").trim();
   if (!q) return null;                 // ohne Angabe im Link: nur die Standardvorlagen
@@ -517,7 +536,12 @@ function vorlagenQuelle() {
   const erlaubt = ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith("." + h));
   if (!eigen && !erlaubt)
     return { url: null, name: q, fehler: "nur Dateien neben der Seite oder von GitHub" };
-  return { url: u.href, name: decodeURIComponent(u.pathname.split("/").pop() || q) };
+  const datei = u.pathname.split("/").filter(Boolean).pop() || "";
+  return {
+    url: eigen ? u.href : rohAdresse(u),
+    name: decodeURIComponent(/\.\w+$/.test(datei) ? datei
+          : (u.hostname.includes("gist") ? "Gist" : datei || q))
+  };
 }
 const quelle = vorlagenQuelle();
 const clubHead = document.getElementById("clubHead"), clubList = document.getElementById("clubList");

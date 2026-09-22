@@ -55,14 +55,44 @@ Die Überschrift in der Seitenleiste zeigt dann den Dateinamen an, damit im
 Training klar ist, welcher Satz geladen ist.
 
 Aus Sicherheitsgründen werden nur Dateien neben der Seite und GitHub-Adressen
-geladen (`raw.githubusercontent.com`, `gist.githubusercontent.com`,
-`*.github.io`). Andere Adressen lehnt die Seite mit einem Hinweis ab, damit ein
-präparierter Link keine fremden Inhalte einschleusen kann.
+geladen (`github.com`, `raw.githubusercontent.com`, `gist.github.com`,
+`gist.githubusercontent.com`, `*.github.io`). Andere Adressen lehnt die Seite
+mit einem Hinweis ab, damit ein präparierter Link keine fremden Inhalte
+einschleusen kann.
 
-Wichtig ist die **Roh-Adresse** (`raw.githubusercontent.com`), nicht die normale
-`github.com/.../blob/...`-Adresse – letztere liefert die GitHub-Oberfläche statt
-der reinen Daten. Auf GitHub führt der Knopf **Raw** beim Ansehen der Datei zur
-richtigen Adresse.
+Die Adresse darf dabei so aussehen, wie sie im Browser steht – die Seite rechnet
+sie selbst auf die Roh-Adresse um. Diese drei Formen funktionieren alle:
+
+```
+https://gist.github.com/name/abc123
+https://gist.github.com/name/abc123/raw/.../vorlagen.json
+https://github.com/jekruege/volleyball-aufstellung/blob/main/vorlagen.json
+```
+
+## Eigene Vorlagen ohne Zugriff aufs Repository teilen (Gist)
+
+Wer selbst Vorlagen beisteuern will, braucht keinen Zugang zu diesem
+Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
+
+1. In der Seite alle Aufstellungen bauen und unter „Eigene Vorlagen" speichern.
+2. Auf „Als Datei sichern" klicken. Die Datei landet im Download-Ordner.
+3. Die Datei in einem Texteditor öffnen und den gesamten Inhalt kopieren.
+4. Auf https://gist.github.com anmelden, den Inhalt in das große Feld einfügen,
+   als Dateinamen `vorlagen.json` eintragen und unten auf **Create secret gist**
+   klicken. Secret heißt: nicht öffentlich auffindbar, aber für jeden mit dem
+   Link lesbar. **Create public gist** geht genauso.
+5. Die Adresse aus der Adresszeile kopieren und an den Link anhängen:
+
+```
+https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://gist.github.com/name/abc123
+```
+
+Diesen Link kann die Person dann an ihre Mannschaft weitergeben. Ändert sie
+später etwas, bearbeitet sie den Gist über **Edit** – der Link bleibt derselbe,
+und alle sehen beim nächsten Aufruf den neuen Stand.
+
+Wer gar kein GitHub-Konto hat, schickt einfach die gesicherte Datei weiter; sie
+lässt sich in jeder Seite über „Datei laden" einlesen.
 
 ## Vorlagen anlegen oder ändern
 
