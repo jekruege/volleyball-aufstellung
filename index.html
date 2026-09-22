@@ -488,7 +488,7 @@ renderList();
 const ALLOWED_HOSTS = ["raw.githubusercontent.com", "gist.githubusercontent.com", "github.io"];
 function vorlagenQuelle() {
   const q = (new URLSearchParams(location.search).get("vorlagen") || "").trim();
-  if (!q) return { url: "vorlagen.json", name: "" };
+  if (!q) return null;                 // ohne Angabe im Link: nur die Standardvorlagen
   let u;
   try { u = new URL(q, location.href); }
   catch (e) { return { url: null, name: q, fehler: "keine gültige Adresse" }; }
@@ -503,16 +503,17 @@ function vorlagenQuelle() {
 const quelle = vorlagenQuelle();
 const clubHead = document.getElementById("clubHead"), clubList = document.getElementById("clubList");
 function clubHinweis(text) {
-  clubHead.textContent = "Vereins-Vorlagen";
   clubHead.hidden = false;
   const p = document.createElement("p");
   p.className = "empty";
   p.textContent = text;
   clubList.appendChild(p);
 }
-if (!quelle.url) {
+if (quelle && !quelle.url) {
+  clubHead.textContent = "Vorlagen-Datei";
   clubHinweis(`„${quelle.name}“ wird nicht geladen: ${quelle.fehler}.`);
-} else {
+} else if (quelle) {
+  clubHead.textContent = "Vorlagen aus " + quelle.name;
   fetch(quelle.url, { cache: "no-cache" })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
@@ -524,14 +525,9 @@ if (!quelle.url) {
         b.addEventListener("click", () => applyLayout(d[n]));
         clubList.appendChild(b);
       }
-      clubHead.textContent = quelle.name && quelle.name !== "vorlagen.json"
-        ? "Vorlagen aus " + quelle.name : "Vereins-Vorlagen";
       clubHead.hidden = false;
     })
-    .catch(err => {
-      // Standarddatei fehlt lautlos – dann bleiben die Standardvorlagen stehen
-      if (quelle.name) clubHinweis(`„${quelle.name}“ konnte nicht geladen werden (${err.message}).`);
-    });
+    .catch(err => clubHinweis(`„${quelle.name}“ konnte nicht geladen werden (${err.message}).`));
 }
 
 /* ---------- Optionen ---------- */
