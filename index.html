@@ -450,7 +450,15 @@ document.getElementById("btnSave").addEventListener("click", () => {
 newName.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnSave").click(); });
 
 document.getElementById("btnExport").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(readStore(), null, 2)], { type: "application/json" });
+  const store = readStore();
+  if (!Object.keys(store).length) {
+    alert("Es sind noch keine eigenen Vorlagen gespeichert.\n\n" +
+          "Gesichert wird nur die Liste unter „Eigene Vorlagen“. Stelle die Mannschaft " +
+          "auf, gib oben einen Namen ein und klicke auf „Speichern“ – danach lässt sich " +
+          "alles als Datei sichern.");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "volleyball-vorlagen.json";
