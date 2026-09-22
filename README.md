@@ -22,75 +22,11 @@ Live: https://jekruege.github.io/volleyball-aufstellung/
 - **Weitere Vorlagen** kommen aus einer JSON-Datei, die im Link angegeben wird
   (siehe unten). Ohne Angabe bleibt es bei den Standardvorlagen.
 - **Eigene Vorlagen** speichert jeder in seinem eigenen Browser. Doppelklick auf
-  den Namen überschreibt sie mit der aktuellen Aufstellung.
+  den Namen überschreibt sie mit der aktuellen Aufstellung. Mit „Link erzeugen"
+  lassen sie sich als Link verschicken (siehe unten).
 
 Die zuletzt gezeigte Aufstellung merkt sich der Browser und stellt sie beim
 nächsten Öffnen wieder her.
-
-## Vorlagen anlegen oder ändern
-
-1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.
-2. „Als Datei sichern" klicken – es entsteht `volleyball-vorlagen.json`.
-
-Über „Datei laden" lässt sich so eine Datei auch wieder in den eigenen Browser
-einlesen – gleichnamige Vorlagen werden ersetzt, die übrigen bleiben erhalten.
-
-## Eigene Vorlagen ohne Zugriff aufs Repository teilen (Gist)
-
-Wer selbst Vorlagen beisteuern will, braucht keinen Zugang zu diesem
-Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
-
-1. In der Seite alle Aufstellungen bauen und unter „Eigene Vorlagen" speichern.
-2. Auf „Als Datei sichern" klicken. Die Datei landet im Download-Ordner.
-3. Die Datei in einem Texteditor öffnen und den gesamten Inhalt kopieren.
-4. Auf https://gist.github.com anmelden, den Inhalt in das große Feld einfügen,
-   als Dateinamen `vorlagen.json` eintragen und unten auf **Create secret gist**
-   klicken. Secret heißt: nicht öffentlich auffindbar, aber für jeden mit dem
-   Link lesbar. **Create public gist** geht genauso.
-5. Die Adresse aus der Adresszeile kopieren und an den Link https://jekruege.github.io/volleyball-aufstellung/?vorlagen= anhängen. So zum Beispiel:
-
-```
-https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://gist.github.com/name/abc123
-```
-
-Diesen Link kann die Person dann an ihre Mannschaft weitergeben. Ändert sie
-später etwas, bearbeitet sie den Gist über **Edit** – der Link bleibt derselbe,
-und alle sehen beim nächsten Aufruf den neuen Stand.
-
-Wer gar kein GitHub-Konto hat, schickt einfach die gesicherte Datei weiter; sie
-lässt sich in jeder Seite über „Datei laden" einlesen.
-
-
-## Format der Vorlagen-Datei
-
-Eine JSON-Datei mit einem Eintrag je Aufstellung. Koordinaten sind Meter:
-`x` läuft von 0 (links) bis 9 (rechts), `y` ist der Abstand zum Netz – positiv
-auf der eigenen Seite, negativ beim Gegner.
-
-```json
-{
-  "Abwehr gegen deren 4": {
-    "own":  [["1", 8.1, 7.4, "spieler"], ["2", 7.9, 0.45, "zuspieler"], "… sechs Einträge"],
-    "opp":  [["4", 8.0, -1.3, "angreifer"], ["3", 4.6, -1.4, "gegner"], "… sechs Einträge"],
-    "ball": [7.8, -0.5]
-  }
-}
-```
-
-Mögliche Rollen sind `spieler`, `zuspieler`, `libero` und `versteckt` für die
-eigene Mannschaft sowie `gegner`, `angreifer` und `versteckt` für die
-gegnerische. Ältere Dateien, die statt `opp` nur ein einzelnes `att` enthalten,
-werden weiterhin gelesen; die übrigen fünf Gegner sind dann ausgeblendet.
-
-## Dateien
-
-- `index.html` – die komplette Anwendung, ohne externe Abhängigkeiten
-- `vorlagen.json` – die gemeinsamen Vorlagen des Vereins, per `?vorlagen=`
-  aufrufbar
-
-Die Seite funktioniert auch offline: `index.html` herunterladen und per
-Doppelklick öffnen. Die Vereins-Vorlagen fehlen dann, alles andere läuft.
-
 
 ## Mehrere Vorlagensätze über den Link
 
@@ -101,7 +37,7 @@ Mannschaft ihren eigenen Link zu geben.
 Die gemeinsamen Vorlagen aus diesem Repository:
 
 ```
-https://jekruege.github.io/volleyball-aufstellung/?vorlagen=Schneeren.json
+https://jekruege.github.io/volleyball-aufstellung/?vorlagen=vorlagen.json
 ```
 
 Ein anderer Satz, ebenfalls hier abgelegt:
@@ -133,3 +69,96 @@ https://gist.github.com/name/abc123
 https://gist.github.com/name/abc123/raw/.../vorlagen.json
 https://github.com/jekruege/volleyball-aufstellung/blob/main/vorlagen.json
 ```
+
+## Vorlagen als Link weitergeben
+
+Der schnellste Weg, ganz ohne GitHub: „Link erzeugen" unter „Eigene Vorlagen".
+Die Seite packt alle eigenen Vorlagen zusammen und hängt sie an die Adresse an.
+
+- **Link kopieren** legt ihn in die Zwischenablage – etwa für WhatsApp oder ein
+  Lesezeichen im Browser.
+- **Per Mail schicken** öffnet das Mailprogramm mit fertigem Text. Adresse
+  eintragen, absenden – wer den Link später öffnet, hat seine Aufstellungen
+  sofort wieder.
+
+Beim Öffnen erscheinen sie unter „Vorlagen aus dem Link". Ein Klick auf „In
+eigene Vorlagen übernehmen" legt sie dauerhaft im Browser ab, sodass sie auch
+ohne den Link da sind.
+
+Sechs Vorlagen ergeben etwa 550 Zeichen Link. Es gibt keinen Server dahinter:
+Der Teil hinter dem `#` wird vom Browser nicht übertragen, die Aufstellungen
+stecken im Link selbst und werden nirgends gespeichert. Entsprechend gilt aber
+auch: Geht der Link verloren, sind die Vorlagen weg – wer sie behalten will,
+übernimmt sie in den Browser oder sichert sie als Datei.
+
+Sehr lange Listen können an Grenzen stoßen, weil manche Mailprogramme Links
+umbrechen. Ab etwa 15 Vorlagen ist die Datei oder ein Gist der bessere Weg.
+
+## Eigene Vorlagen ohne Zugriff aufs Repository teilen (Gist)
+
+Wer selbst Vorlagen beisteuern will, braucht keinen Zugang zu diesem
+Repository. Ein Gist genügt – eine Art Notizzettel bei GitHub:
+
+1. In der Seite alle Aufstellungen bauen und unter „Eigene Vorlagen" speichern.
+2. Auf „Als Datei sichern" klicken. Die Datei landet im Download-Ordner.
+3. Die Datei in einem Texteditor öffnen und den gesamten Inhalt kopieren.
+4. Auf https://gist.github.com anmelden, den Inhalt in das große Feld einfügen,
+   als Dateinamen `vorlagen.json` eintragen und unten auf **Create secret gist**
+   klicken. Secret heißt: nicht öffentlich auffindbar, aber für jeden mit dem
+   Link lesbar. **Create public gist** geht genauso.
+5. Die Adresse aus der Adresszeile kopieren und an den Link anhängen:
+
+```
+https://jekruege.github.io/volleyball-aufstellung/?vorlagen=https://gist.github.com/name/abc123
+```
+
+Diesen Link kann die Person dann an ihre Mannschaft weitergeben. Ändert sie
+später etwas, bearbeitet sie den Gist über **Edit** – der Link bleibt derselbe,
+und alle sehen beim nächsten Aufruf den neuen Stand.
+
+Wer gar kein GitHub-Konto hat, schickt einfach die gesicherte Datei weiter; sie
+lässt sich in jeder Seite über „Datei laden" einlesen.
+
+## Vorlagen anlegen oder ändern
+
+1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.
+2. „Als Datei sichern" klicken – es entsteht `volleyball-vorlagen.json`.
+3. Die Datei hier im Repository hochladen: als `vorlagen.json`, wenn sie der
+   gemeinsame Satz sein soll, sonst unter eigenem Namen wie `damen2.json`. In
+   beiden Fällen wird sie über `?vorlagen=` im Link aufgerufen.
+
+Nach ein bis zwei Minuten liefert GitHub Pages den neuen Stand aus. Wer die
+Seite vorher offen hatte, muss einmal neu laden.
+
+Über „Datei laden" lässt sich so eine Datei auch wieder in den eigenen Browser
+einlesen – gleichnamige Vorlagen werden ersetzt, die übrigen bleiben erhalten.
+
+## Format der Vorlagen-Datei
+
+Eine JSON-Datei mit einem Eintrag je Aufstellung. Koordinaten sind Meter:
+`x` läuft von 0 (links) bis 9 (rechts), `y` ist der Abstand zum Netz – positiv
+auf der eigenen Seite, negativ beim Gegner.
+
+```json
+{
+  "Abwehr gegen deren 4": {
+    "own":  [["1", 8.1, 7.4, "spieler"], ["2", 7.9, 0.45, "zuspieler"], "… sechs Einträge"],
+    "opp":  [["4", 8.0, -1.3, "angreifer"], ["3", 4.6, -1.4, "gegner"], "… sechs Einträge"],
+    "ball": [7.8, -0.5]
+  }
+}
+```
+
+Mögliche Rollen sind `spieler`, `zuspieler`, `libero` und `versteckt` für die
+eigene Mannschaft sowie `gegner`, `angreifer` und `versteckt` für die
+gegnerische. Ältere Dateien, die statt `opp` nur ein einzelnes `att` enthalten,
+werden weiterhin gelesen; die übrigen fünf Gegner sind dann ausgeblendet.
+
+## Dateien
+
+- `index.html` – die komplette Anwendung, ohne externe Abhängigkeiten
+- `vorlagen.json` – die gemeinsamen Vorlagen des Vereins, per `?vorlagen=`
+  aufrufbar
+
+Die Seite funktioniert auch offline: `index.html` herunterladen und per
+Doppelklick öffnen. Die Vereins-Vorlagen fehlen dann, alles andere läuft.
