@@ -28,6 +28,29 @@ Live: https://jekruege.github.io/volleyball-aufstellung/
 Die zuletzt gezeigte Aufstellung merkt sich der Browser und stellt sie beim
 nächsten Öffnen wieder her.
 
+## Quiz
+
+Der Knopf „Quiz" neben „Link erzeugen" startet eine Trainingsrunde zum
+Aufstellungen-Lernen.
+
+Gespielt wird mit den **eigenen Vorlagen**, sofern welche gespeichert sind –
+sonst mit den Standardvorlagen „Abwehr mit zurückgezogener 6". Die
+Aufstellungen werden in zufälliger Reihenfolge durchrotiert.
+
+In jeder Runde fehlt ein Spieler der eigenen Mannschaft. Gefragt wird nach
+seiner Nummer, zu klicken ist die Stelle im Feld, an der er stehen müsste.
+Bis 1,5 m Abweichung zählt es als richtig – es muss also nicht exakt sein.
+Danach zeigt die Seite kurz die richtige Stelle, bei einem Fehlgriff auch den
+eigenen Tipp, und die nächste Aufstellung kommt.
+
+Gezählt wird wie im Volleyballsatz: richtig gibt einen Punkt für die eigene
+Mannschaft, falsch einen für den Gegner. Gespielt wird bis 25, gewonnen mit
+zwei Punkten Vorsprung – 27:25 ist also möglich. Der Stand steht über dem Feld.
+
+Während des Quiz lassen sich die Figuren nicht verschieben, und die zuletzt
+aufgebaute Aufstellung bleibt erhalten: Wer das Quiz über denselben Knopf
+beendet, findet sie unverändert wieder vor.
+
 ## Vorlagen anlegen oder ändern
 
 1. Aufstellungen in der Seite bauen und unter „Eigene Vorlagen" speichern.

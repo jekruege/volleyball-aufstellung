@@ -38,11 +38,29 @@
   #linkFeld { width:100%; margin-bottom:6px; font-size:12px; color:var(--muted); }
   .mailbtn { display:inline-block; padding:8px 10px; border:1px solid var(--line); background:#fafafa; border-radius:8px; font-size:14px; color:var(--text); text-decoration:none; white-space:nowrap; }
   .mailbtn:hover { background:#eef3fa; border-color:#b9cde6; }
+  #quizBar { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .qzeile { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .qtitel { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; }
+  .qstand { font-size:22px; font-variant-numeric:tabular-nums; }
+  .qstand b { font-weight:600; }
+  #qWir { color:#1f5fa8; } #qGegner { color:#c62828; }
+  #qFrage { margin:6px 0 0; font-size:15px; line-height:1.4; }
+  #qFrage.gut { color:#2f7a4f; } #qFrage.schlecht { color:#a33; }
+  svg.quiz { cursor:crosshair; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="board"><svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg></div>
+  <div class="board">
+    <div id="quizBar" hidden>
+      <div class="qzeile">
+        <span class="qtitel">Quiz</span>
+        <span class="qstand"><b id="qWir">0</b> : <b id="qGegner">0</b></span>
+      </div>
+      <p id="qFrage"></p>
+    </div>
+    <svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg>
+  </div>
   <div class="side">
     <h1>Volleyball-Aufstellung</h1>
     <p class="hint">Alle Figuren lassen sich mit Maus oder Finger verschieben. Ein <b>Klick</b> wechselt die Rolle und damit die Farbe, der letzte Schritt blendet die Figur aus. Ein <b>Doppelklick</b> ändert die Beschriftung.</p>
@@ -88,6 +106,7 @@
     </div>
     <div class="row">
       <button class="inline" id="btnLink">Link erzeugen</button>
+      <button class="inline" id="btnQuiz">Quiz</button>
     </div>
     <div id="linkBox" hidden>
       <input type="text" id="linkFeld" readonly>
@@ -199,7 +218,7 @@ function cycleRole(p) {
 function buildPieces() {
   pieceLayer.innerHTML = "";
   for (const p of pieces) {
-    if (p.role === "versteckt") { p.node = null; continue; }
+    if (p.role === "versteckt" || p.quizAus) { p.node = null; continue; }
     const g = el("g", { class: "piece", "data-id": p.id }, pieceLayer);
     if (p.side === "ball") {
       el("circle", { r: 10, fill: "#ffd83d", stroke: "#1b1b1b", "stroke-width": 1.5 }, g);
@@ -227,7 +246,7 @@ function render() {
 /* ---------- Ausgeblendete Figuren ---------- */
 const hiddenList = document.getElementById("hiddenList");
 function renderHidden() {
-  const hid = pieces.filter(p => p.role === "versteckt");
+  const hid = pieces.filter(p => p.role === "versteckt" && !p.quizAus);
   hiddenList.innerHTML = "";
   document.getElementById("hiddenHead").hidden = !hid.length;
   for (const p of hid) {
@@ -274,6 +293,7 @@ function toMeters(evt) {
   return { x: (q.x - M) / S, y: (q.y - NET) / S };
 }
 function startDrag(evt) {
+  if (quiz.aktiv) return;                    // im Quiz wird nicht verschoben
   evt.preventDefault();
   const p = pieces.find(p => p.id === evt.currentTarget.dataset.id);
   const m = toMeters(evt);
@@ -695,6 +715,7 @@ document.getElementById("optNums").addEventListener("change", e => {
 
 /* ---------- Letzten Stand merken ---------- */
 function save() {
+  if (quiz.aktiv) return;                    // Quiz-Zwischenstände nicht merken
   try { localStorage.setItem("vb-aufstellung", JSON.stringify(currentLayout())); } catch (e) {}
 }
 function load() {
@@ -705,6 +726,117 @@ function load() {
     return true;
   } catch (e) { return false; }
 }
+
+/* ---------- Quiz ----------
+   Gespielt wird mit den eigenen Vorlagen, falls vorhanden, sonst mit den
+   Standardvorlagen „zurückgezogene 6“. Ein eigener Spieler fehlt, seine Stelle
+   ist zu klicken. Gezählt wird wie im Satz: bis 25, zwei Punkte Vorsprung.   */
+const quiz = { aktiv: false, wir: 0, gegner: 0, pool: [], idx: 0, fehlt: null, warten: false, vorher: null };
+const TOLERANZ = 1.5;                        // Meter – „muss nicht exakt sein“
+const quizBar = document.getElementById("quizBar"), qFrage = document.getElementById("qFrage");
+const markerLayer = el("g", {});
+
+function quizPool() {
+  const eigene = Object.values(readStore()).filter(validLayout);
+  if (eigene.length) return eigene;
+  return ["z_dop4", "z_dop2", "z_dop3", "z_ein4", "z_ein2", "z_ein3"].map(n => PRESETS[n]);
+}
+function mische(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function stand() {
+  document.getElementById("qWir").textContent = quiz.wir;
+  document.getElementById("qGegner").textContent = quiz.gegner;
+}
+function satzVorbei() {
+  return (quiz.wir >= 25 || quiz.gegner >= 25) && Math.abs(quiz.wir - quiz.gegner) >= 2;
+}
+
+function quizStart() {
+  if (!quiz.vorher) quiz.vorher = currentLayout();   // Aufstellung für danach merken
+  quiz.pool = mische(quizPool());
+  quiz.idx = -1;
+  quiz.wir = quiz.gegner = 0;
+  quiz.aktiv = true;
+  quiz.warten = false;
+  quizBar.hidden = false;
+  svg.classList.add("quiz");
+  document.getElementById("btnQuiz").textContent = "Quiz beenden";
+  stand();
+  naechsteFrage();
+}
+function quizEnde(text) {
+  quiz.aktiv = false;
+  svg.classList.remove("quiz");
+  markerLayer.innerHTML = "";
+  document.getElementById("btnQuiz").textContent = "Quiz";
+  for (const p of pieces) p.quizAus = false;
+  if (text) {
+    qFrage.className = "";
+    qFrage.textContent = text;
+  } else {
+    quizBar.hidden = true;
+    if (quiz.vorher) applyLayout(quiz.vorher);
+  }
+  if (!text) quiz.vorher = null;
+  buildPieces();
+}
+
+function naechsteFrage() {
+  markerLayer.innerHTML = "";
+  for (const p of pieces) p.quizAus = false;
+  quiz.idx = (quiz.idx + 1) % quiz.pool.length;          // Aufstellungen durchrotieren
+  applyLayout(quiz.pool[quiz.idx]);
+  const moeglich = own.filter(p => p.role !== "versteckt");
+  if (!moeglich.length) { quizEnde("In dieser Aufstellung steht niemand – Quiz beendet."); return; }
+  quiz.fehlt = moeglich[Math.floor(Math.random() * moeglich.length)];
+  quiz.fehlt.quizAus = true;
+  buildPieces();
+  qFrage.className = "";
+  qFrage.textContent = `Wo steht die „${quiz.fehlt.label}“? Tippe die Stelle im Feld an.`;
+  quiz.warten = false;
+}
+
+function quizKlick(evt) {
+  if (!quiz.aktiv || quiz.warten) return;
+  const m = toMeters(evt), z = quiz.fehlt;
+  const abstand = Math.hypot(m.x - z.x, m.y - z.y);
+  const richtig = abstand <= TOLERANZ;
+  quiz.warten = true;
+  if (richtig) quiz.wir++; else quiz.gegner++;
+  stand();
+
+  // richtige Stelle und den eigenen Tipp zeigen
+  z.quizAus = false;
+  buildPieces();
+  el("circle", { cx: px(z.x), cy: py(z.y), r: 30, fill: "none",
+    stroke: richtig ? "#2f9a6a" : "#c62828", "stroke-width": 3 }, markerLayer);
+  if (!richtig) {
+    el("path", { d: `M${px(m.x)-9} ${py(m.y)-9} L${px(m.x)+9} ${py(m.y)+9} M${px(m.x)+9} ${py(m.y)-9} L${px(m.x)-9} ${py(m.y)+9}`,
+      stroke: "#c62828", "stroke-width": 3, fill: "none", "stroke-linecap": "round" }, markerLayer);
+  }
+  qFrage.className = richtig ? "gut" : "schlecht";
+  qFrage.textContent = richtig
+    ? `Richtig – Punkt für uns. Stand ${quiz.wir}:${quiz.gegner}.`
+    : `Daneben, rund ${abstand.toFixed(1).replace(".", ",")} m entfernt – Punkt für den Gegner. Stand ${quiz.wir}:${quiz.gegner}.`;
+
+  setTimeout(() => {
+    if (satzVorbei()) {
+      const gewonnen = quiz.wir > quiz.gegner;
+      quizEnde(`${gewonnen ? "Satz gewonnen" : "Satz verloren"} – ${quiz.wir}:${quiz.gegner}. ` +
+               "Für eine neue Runde wieder auf „Quiz“ klicken.");
+      document.getElementById("btnQuiz").textContent = "Quiz";
+    } else {
+      naechsteFrage();
+    }
+  }, richtig ? 1100 : 1900);
+}
+svg.addEventListener("click", quizKlick);
+document.getElementById("btnQuiz").addEventListener("click", () => {
+  if (quiz.aktiv) quizEnde(null); else quizStart();
+});
 
 if (!load()) applyPreset("grund");
 </script>
