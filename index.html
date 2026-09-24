@@ -40,6 +40,7 @@
   .doku { margin:18px 0 0; padding-top:14px; border-top:1px solid var(--line); font-size:13px; color:var(--muted); line-height:1.5; }
   .doku a { color:#1f5fa8; }
   #linkFeld { width:100%; margin-bottom:6px; font-size:12px; color:var(--muted); }
+  button.ok { background:#e6f4ec; border-color:#9fd3b5; color:#1d6b43; }
   .mailbtn { display:inline-block; padding:8px 10px; border:1px solid var(--line); background:#fafafa; border-radius:8px; font-size:14px; color:var(--text); text-decoration:none; white-space:nowrap; }
   .mailbtn:hover { background:#eef3fa; border-color:#b9cde6; }
   #quizBar { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
@@ -174,7 +175,7 @@ const I18N = {
     eigene: "Eigene Vorlagen", name_ph: "Name der Aufstellung", speichern: "Speichern",
     als_datei: "Als Datei sichern", datei_laden: "Datei laden", link_erzeugen: "Link erzeugen",
     quiz: "Quiz", quiz_beenden: "Quiz beenden", neuer_satz: "Neuer Satz",
-    link_kopieren: "Link kopieren", kopiert: "Kopiert", cmd_c: "Bitte mit Cmd+C kopieren",
+    link_kopieren: "Link kopieren", kopiert: "Kopiert", cmd_c: k => `Link markiert – bitte mit ${k} kopieren`,
     per_mail: "Per Mail schicken", anzeige: "Anzeige",
     opt_linien: "Schlagwinkel des Angreifers", opt_ball: "Ball anzeigen", opt_nummern: "Positionsnummern im Feld",
     legende: "Legende", l_spieler: "Eigener Spieler", l_zuspieler: "Zuspieler", l_libero: "Libero",
@@ -228,7 +229,7 @@ const I18N = {
     eigene: "My templates", name_ph: "Name of the lineup", speichern: "Save",
     als_datei: "Save as file", datei_laden: "Load file", link_erzeugen: "Create link",
     quiz: "Quiz", quiz_beenden: "End quiz", neuer_satz: "New set",
-    link_kopieren: "Copy link", kopiert: "Copied", cmd_c: "Press Cmd+C to copy",
+    link_kopieren: "Copy link", kopiert: "Copied", cmd_c: k => `Link selected – press ${k} to copy`,
     per_mail: "Send by email", anzeige: "Display",
     opt_linien: "Attacker's hitting angles", opt_ball: "Show ball", opt_nummern: "Position numbers on court",
     legende: "Legend", l_spieler: "Own player", l_zuspieler: "Setter", l_libero: "Libero",
@@ -737,16 +738,33 @@ document.getElementById("btnLink").addEventListener("click", async () => {
     alert(t("link_fehler", e.message));
   }
 });
+// In die Zwischenablage kopieren. Zuerst der klassische Weg – er läuft sofort im
+// Klick und funktioniert auch in Safari und bei lokal geöffneter Datei. Klappt
+// das nicht, die moderne Schnittstelle. Liefert true, wenn es geklappt hat.
+async function inZwischenablage(text) {
+  let ok = false;
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;";
+  document.body.appendChild(ta);
+  ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  if (ok) return true;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+  }
+  return false;
+}
 document.getElementById("btnKopieren").addEventListener("click", async () => {
   const b = document.getElementById("btnKopieren");
-  try {
-    await navigator.clipboard.writeText(linkFeld.value);
-    b.textContent = t("kopiert");
-  } catch (e) {
-    linkFeld.select(); linkFeld.setSelectionRange(0, 99999);
-    b.textContent = t("cmd_c");
-  }
-  setTimeout(() => { b.textContent = t("link_kopieren"); }, 2500);
+  const ok = await inZwischenablage(linkFeld.value);
+  linkFeld.focus(); linkFeld.select(); linkFeld.setSelectionRange(0, linkFeld.value.length);
+  const taste = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent) ? "Cmd+C" : (LANG === "de" ? "Strg+C" : "Ctrl+C");
+  b.textContent = ok ? t("kopiert") : t("cmd_c", taste);
+  b.classList.toggle("ok", ok);
+  setTimeout(() => { b.textContent = t("link_kopieren"); b.classList.remove("ok"); }, ok ? 2500 : 5000);
 });
 
 // Beim Öffnen: stecken Vorlagen im Link, werden sie angezeigt
