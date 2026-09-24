@@ -46,6 +46,8 @@
   #qWir { color:#1f5fa8; } #qGegner { color:#c62828; }
   #qFrage { margin:6px 0 0; font-size:15px; line-height:1.4; }
   #qFrage.gut { color:#2f7a4f; } #qFrage.schlecht { color:#a33; }
+  .qfuss { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px; }
+  #qQuelle { font-size:12px; color:var(--muted); }
   svg.quiz { cursor:crosshair; }
 </style>
 </head>
@@ -58,6 +60,10 @@
         <span class="qstand"><b id="qWir">0</b> : <b id="qGegner">0</b></span>
       </div>
       <p id="qFrage"></p>
+      <div class="qfuss">
+        <span id="qQuelle"></span>
+        <button class="inline" id="btnNeuerSatz" hidden>Neuer Satz</button>
+      </div>
     </div>
     <svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg>
   </div>
@@ -599,6 +605,9 @@ document.getElementById("btnKopieren").addEventListener("click", async () => {
   setTimeout(() => { b.textContent = "Link kopieren"; }, 2500);
 });
 
+// Alle nachgeladenen Vorlagen (aus dem Link oder aus einer Datei) – das Quiz nutzt sie mit
+const zusatzVorlagen = {};
+
 // Beim Öffnen: stecken Vorlagen im Link, werden sie angezeigt
 (async () => {
   const h = location.hash.slice(1);
@@ -610,6 +619,7 @@ document.getElementById("btnKopieren").addEventListener("click", async () => {
     const namen = Object.keys(d).filter(k => validLayout(d[k])).sort((a, b) => a.localeCompare(b, "de"));
     if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
     for (const n of namen) {
+      zusatzVorlagen[n] = d[n];
       const b = document.createElement("button");
       b.textContent = n;
       b.addEventListener("click", () => applyLayout(d[n]));
@@ -698,6 +708,7 @@ if (quelle && !quelle.url) {
         b.textContent = n;
         b.addEventListener("click", () => applyLayout(d[n]));
         clubList.appendChild(b);
+        zusatzVorlagen[n] = d[n];
       }
       clubHead.hidden = false;
     })
@@ -728,18 +739,24 @@ function load() {
 }
 
 /* ---------- Quiz ----------
-   Gespielt wird mit den eigenen Vorlagen, falls vorhanden, sonst mit den
-   Standardvorlagen „zurückgezogene 6“. Ein eigener Spieler fehlt, seine Stelle
-   ist zu klicken. Gezählt wird wie im Satz: bis 25, zwei Punkte Vorsprung.   */
-const quiz = { aktiv: false, wir: 0, gegner: 0, pool: [], idx: 0, fehlt: null, warten: false, vorher: null };
+   Gespielt wird mit den eigenen Vorlagen – gespeicherte, per Link oder per
+   Datei geladene. Gibt es keine, dann mit den Standardvorlagen „zurückgezogene 6“.
+   Ein eigener Spieler fehlt, seine Stelle ist zu klicken.
+   Gezählt wird wie im Satz: bis 25, zwei Punkte Vorsprung.
+   Zustände: geschlossen (offen=false) → Satz läuft (aktiv) → Satz vorbei (offen, nicht aktiv) */
+const quiz = { offen: false, aktiv: false, wir: 0, gegner: 0, pool: [], idx: 0,
+               fehlt: null, warten: false, vorher: null, timer: null };
 const TOLERANZ = 1.5;                        // Meter – „muss nicht exakt sein“
 const quizBar = document.getElementById("quizBar"), qFrage = document.getElementById("qFrage");
+const btnQuiz = document.getElementById("btnQuiz"), btnNeuerSatz = document.getElementById("btnNeuerSatz");
 const markerLayer = el("g", {});
 
 function quizPool() {
-  const eigene = Object.values(readStore()).filter(validLayout);
-  if (eigene.length) return eigene;
-  return ["z_dop4", "z_dop2", "z_dop3", "z_ein4", "z_ein2", "z_ein3"].map(n => PRESETS[n]);
+  const eigene = Object.assign({}, zusatzVorlagen, readStore());   // Gespeichertes gewinnt bei gleichem Namen
+  const liste = Object.values(eigene).filter(validLayout);
+  if (liste.length) return { liste, quelle: `eigene Vorlagen (${liste.length})` };
+  return { liste: ["z_dop4", "z_dop2", "z_dop3", "z_ein4", "z_ein2", "z_ein3"].map(n => PRESETS[n]),
+           quelle: "Standardvorlagen „zurückgezogene 6“" };
 }
 function mische(a) {
   a = a.slice();
@@ -753,44 +770,64 @@ function stand() {
 function satzVorbei() {
   return (quiz.wir >= 25 || quiz.gegner >= 25) && Math.abs(quiz.wir - quiz.gegner) >= 2;
 }
+function aufraeumen() {                      // Timer stoppen, Markierungen und Lücken entfernen
+  clearTimeout(quiz.timer); quiz.timer = null;
+  markerLayer.innerHTML = "";
+  for (const p of pieces) p.quizAus = false;
+}
 
 function quizStart() {
+  aufraeumen();
   if (!quiz.vorher) quiz.vorher = currentLayout();   // Aufstellung für danach merken
-  quiz.pool = mische(quizPool());
+  const { liste, quelle } = quizPool();
+  quiz.pool = mische(liste);
   quiz.idx = -1;
   quiz.wir = quiz.gegner = 0;
-  quiz.aktiv = true;
+  quiz.offen = quiz.aktiv = true;
   quiz.warten = false;
   quizBar.hidden = false;
+  btnNeuerSatz.hidden = true;
+  document.getElementById("qQuelle").textContent = "Gespielt wird mit: " + quelle;
   svg.classList.add("quiz");
-  document.getElementById("btnQuiz").textContent = "Quiz beenden";
+  btnQuiz.textContent = "Quiz beenden";
   stand();
   naechsteFrage();
 }
-function quizEnde(text) {
+function satzEnde() {                        // Ergebnis stehen lassen, Leiste bleibt offen
+  aufraeumen();
   quiz.aktiv = false;
   svg.classList.remove("quiz");
-  markerLayer.innerHTML = "";
-  document.getElementById("btnQuiz").textContent = "Quiz";
-  for (const p of pieces) p.quizAus = false;
-  if (text) {
-    qFrage.className = "";
-    qFrage.textContent = text;
-  } else {
-    quizBar.hidden = true;
-    if (quiz.vorher) applyLayout(quiz.vorher);
-  }
-  if (!text) quiz.vorher = null;
   buildPieces();
+  const gewonnen = quiz.wir > quiz.gegner;
+  qFrage.className = gewonnen ? "gut" : "schlecht";
+  qFrage.textContent = `${gewonnen ? "Satz gewonnen" : "Satz verloren"} – ${quiz.wir}:${quiz.gegner}.`;
+  btnNeuerSatz.hidden = false;
+}
+function quizSchliessen() {                  // Leiste weg, alte Aufstellung zurück
+  aufraeumen();
+  quiz.offen = quiz.aktiv = false;
+  svg.classList.remove("quiz");
+  quizBar.hidden = true;
+  btnQuiz.textContent = "Quiz";
+  const vorher = quiz.vorher;
+  quiz.vorher = null;
+  if (vorher) applyLayout(vorher); else buildPieces();
 }
 
 function naechsteFrage() {
-  markerLayer.innerHTML = "";
-  for (const p of pieces) p.quizAus = false;
-  quiz.idx = (quiz.idx + 1) % quiz.pool.length;          // Aufstellungen durchrotieren
-  applyLayout(quiz.pool[quiz.idx]);
-  const moeglich = own.filter(p => p.role !== "versteckt");
-  if (!moeglich.length) { quizEnde("In dieser Aufstellung steht niemand – Quiz beendet."); return; }
+  if (!quiz.aktiv) return;
+  aufraeumen();
+  let moeglich = [];
+  for (let versuch = 0; versuch < quiz.pool.length && !moeglich.length; versuch++) {
+    quiz.idx = (quiz.idx + 1) % quiz.pool.length;        // Aufstellungen durchrotieren
+    applyLayout(quiz.pool[quiz.idx]);
+    moeglich = own.filter(p => p.role !== "versteckt");
+  }
+  if (!moeglich.length) {                                  // keine Vorlage mit sichtbaren Spielern
+    quizSchliessen();
+    alert("In keiner der Vorlagen steht ein eigener Spieler – das Quiz kann nicht starten.");
+    return;
+  }
   quiz.fehlt = moeglich[Math.floor(Math.random() * moeglich.length)];
   quiz.fehlt.quizAus = true;
   buildPieces();
@@ -822,21 +859,14 @@ function quizKlick(evt) {
     ? `Richtig – Punkt für uns. Stand ${quiz.wir}:${quiz.gegner}.`
     : `Daneben, rund ${abstand.toFixed(1).replace(".", ",")} m entfernt – Punkt für den Gegner. Stand ${quiz.wir}:${quiz.gegner}.`;
 
-  setTimeout(() => {
-    if (satzVorbei()) {
-      const gewonnen = quiz.wir > quiz.gegner;
-      quizEnde(`${gewonnen ? "Satz gewonnen" : "Satz verloren"} – ${quiz.wir}:${quiz.gegner}. ` +
-               "Für eine neue Runde wieder auf „Quiz“ klicken.");
-      document.getElementById("btnQuiz").textContent = "Quiz";
-    } else {
-      naechsteFrage();
-    }
+  quiz.timer = setTimeout(() => {
+    if (!quiz.aktiv) return;                 // inzwischen beendet
+    if (satzVorbei()) satzEnde(); else naechsteFrage();
   }, richtig ? 1100 : 1900);
 }
 svg.addEventListener("click", quizKlick);
-document.getElementById("btnQuiz").addEventListener("click", () => {
-  if (quiz.aktiv) quizEnde(null); else quizStart();
-});
+btnQuiz.addEventListener("click", () => { if (quiz.offen) quizSchliessen(); else quizStart(); });
+btnNeuerSatz.addEventListener("click", quizStart);
 
 if (!load()) applyPreset("grund");
 </script>
