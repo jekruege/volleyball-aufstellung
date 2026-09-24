@@ -23,6 +23,10 @@
   .piece text { pointer-events:none; font-weight:600; }
   .legend { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted); }
   .legend span { display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:-2px; margin-right:6px; }
+  .legend i { font-style:normal; }
+  .sprache { margin:8px 0 0; font-size:13px; color:var(--muted); }
+  .sprache a { color:var(--muted); }
+  .sprache a.aktiv { color:var(--text); font-weight:600; text-decoration:none; }
   .row { display:flex; gap:6px; margin-bottom:6px; }
   input[type=text] { flex:1; min-width:0; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:14px; }
   button.inline { display:inline-block; width:auto; margin:0; white-space:nowrap; }
@@ -56,95 +60,239 @@
   <div class="board">
     <div id="quizBar" hidden>
       <div class="qzeile">
-        <span class="qtitel">Quiz</span>
+        <span class="qtitel" data-i18n="quiz">Quiz</span>
         <span class="qstand"><b id="qWir">0</b> : <b id="qGegner">0</b></span>
       </div>
       <p id="qFrage"></p>
       <div class="qfuss">
         <span id="qQuelle"></span>
-        <button class="inline" id="btnNeuerSatz" hidden>Neuer Satz</button>
+        <button class="inline" id="btnNeuerSatz" data-i18n="neuer_satz" hidden>Neuer Satz</button>
       </div>
     </div>
-    <svg id="court" viewBox="0 0 480 840" aria-label="Volleyballfeld"></svg>
+    <svg id="court" viewBox="0 0 480 840" data-i18n-aria="feld" aria-label="Volleyballfeld"></svg>
   </div>
   <div class="side">
-    <h1>Volleyball-Aufstellung</h1>
-    <p class="hint">Alle Figuren lassen sich mit Maus oder Finger verschieben. Ein <b>Klick</b> wechselt die Rolle und damit die Farbe, der letzte Schritt blendet die Figur aus. Ein <b>Doppelklick</b> ändert die Beschriftung.</p>
+    <h1 data-i18n="titel">Volleyball-Aufstellung</h1>
+    <p class="hint" data-i18n-html="hinweis">Alle Figuren lassen sich mit Maus oder Finger verschieben. Ein <b>Klick</b> wechselt die Rolle und damit die Farbe, der letzte Schritt blendet die Figur aus. Ein <b>Doppelklick</b> ändert die Beschriftung.</p>
 
-    <h2 id="hiddenHead" hidden>Ausgeblendet</h2>
+    <h2 id="hiddenHead" data-i18n="ausgeblendet" hidden>Ausgeblendet</h2>
     <div class="chips" id="hiddenList"></div>
 
-    <h2 id="linkHead" hidden>Vorlagen aus dem Link</h2>
+    <h2 id="linkHead" data-i18n="aus_link" hidden>Vorlagen aus dem Link</h2>
     <div id="linkList"></div>
 
     <h2 id="clubHead" hidden>Vereins-Vorlagen</h2>
     <div id="clubList"></div>
 
-    <h2>Standard</h2>
-    <button data-preset="grund">Grundstellung (Positionen 1–6)</button>
-    <button data-preset="w">Annahme: W-Formation</button>
+    <h2 data-i18n="standard">Standard</h2>
+    <button data-preset="grund" data-i18n="p_grund">Grundstellung (Positionen 1–6)</button>
+    <button data-preset="w" data-i18n="p_w">Annahme: W-Formation</button>
 
-    <h2>Abwehr mit vorgezogener 6</h2>
-    <button data-preset="v_dop4">Doppelblock – Angriff über deren 4</button>
-    <button data-preset="v_dop2">Doppelblock – Angriff über deren 2</button>
-    <button data-preset="v_dop3">Doppelblock – über die Mitte</button>
-    <button data-preset="v_ein4">Einerblock – Angriff über deren 4</button>
-    <button data-preset="v_ein2">Einerblock – Angriff über deren 2</button>
-    <button data-preset="v_ein3">Einerblock – über die Mitte</button>
+    <h2 data-i18n="abw_vor">Abwehr mit vorgezogener 6</h2>
+    <button data-preset="v_dop4" data-i18n="p_dop4">Doppelblock – Angriff über deren 4</button>
+    <button data-preset="v_dop2" data-i18n="p_dop2">Doppelblock – Angriff über deren 2</button>
+    <button data-preset="v_dop3" data-i18n="p_dop3">Doppelblock – über die Mitte</button>
+    <button data-preset="v_ein4" data-i18n="p_ein4">Einerblock – Angriff über deren 4</button>
+    <button data-preset="v_ein2" data-i18n="p_ein2">Einerblock – Angriff über deren 2</button>
+    <button data-preset="v_ein3" data-i18n="p_ein3">Einerblock – über die Mitte</button>
 
-    <h2>Abwehr mit zurückgezogener 6</h2>
-    <button data-preset="z_dop4">Doppelblock – Angriff über deren 4</button>
-    <button data-preset="z_dop2">Doppelblock – Angriff über deren 2</button>
-    <button data-preset="z_dop3">Doppelblock – über die Mitte</button>
-    <button data-preset="z_ein4">Einerblock – Angriff über deren 4</button>
-    <button data-preset="z_ein2">Einerblock – Angriff über deren 2</button>
-    <button data-preset="z_ein3">Einerblock – über die Mitte</button>
+    <h2 data-i18n="abw_zur">Abwehr mit zurückgezogener 6</h2>
+    <button data-preset="z_dop4" data-i18n="p_dop4">Doppelblock – Angriff über deren 4</button>
+    <button data-preset="z_dop2" data-i18n="p_dop2">Doppelblock – Angriff über deren 2</button>
+    <button data-preset="z_dop3" data-i18n="p_dop3">Doppelblock – über die Mitte</button>
+    <button data-preset="z_ein4" data-i18n="p_ein4">Einerblock – Angriff über deren 4</button>
+    <button data-preset="z_ein2" data-i18n="p_ein2">Einerblock – Angriff über deren 2</button>
+    <button data-preset="z_ein3" data-i18n="p_ein3">Einerblock – über die Mitte</button>
 
-    <h2>Eigene Vorlagen</h2>
+    <h2 data-i18n="eigene">Eigene Vorlagen</h2>
     <div class="row">
-      <input type="text" id="newName" placeholder="Name der Aufstellung" maxlength="40">
-      <button class="inline" id="btnSave">Speichern</button>
+      <input type="text" id="newName" data-i18n-ph="name_ph" placeholder="Name der Aufstellung" maxlength="40">
+      <button class="inline" id="btnSave" data-i18n="speichern">Speichern</button>
     </div>
     <div id="myList"></div>
     <div class="row">
-      <button class="inline" id="btnExport">Als Datei sichern</button>
-      <button class="inline" id="btnImport">Datei laden</button>
+      <button class="inline" id="btnExport" data-i18n="als_datei">Als Datei sichern</button>
+      <button class="inline" id="btnImport" data-i18n="datei_laden">Datei laden</button>
     </div>
     <div class="row">
-      <button class="inline" id="btnLink">Link erzeugen</button>
-      <button class="inline" id="btnQuiz">Quiz</button>
+      <button class="inline" id="btnLink" data-i18n="link_erzeugen">Link erzeugen</button>
+      <button class="inline" id="btnQuiz" data-i18n="quiz">Quiz</button>
     </div>
     <div id="linkBox" hidden>
       <input type="text" id="linkFeld" readonly>
       <div class="row">
-        <button class="inline" id="btnKopieren">Link kopieren</button>
-        <a class="mailbtn" id="btnMail" href="#">Per Mail schicken</a>
+        <button class="inline" id="btnKopieren" data-i18n="link_kopieren">Link kopieren</button>
+        <a class="mailbtn" id="btnMail" href="#" data-i18n="per_mail">Per Mail schicken</a>
       </div>
       <p class="empty" id="linkInfo"></p>
     </div>
     <input type="file" id="fileIn" accept=".json,application/json" hidden>
 
-    <h2>Anzeige</h2>
-    <label class="chk"><input type="checkbox" id="optLines" checked> Schlagwinkel des Angreifers</label>
-    <label class="chk"><input type="checkbox" id="optBall" checked> Ball anzeigen</label>
-    <label class="chk"><input type="checkbox" id="optNums" checked> Positionsnummern im Feld</label>
+    <h2 data-i18n="anzeige">Anzeige</h2>
+    <label class="chk"><input type="checkbox" id="optLines" checked> <span data-i18n="opt_linien">Schlagwinkel des Angreifers</span></label>
+    <label class="chk"><input type="checkbox" id="optBall" checked> <span data-i18n="opt_ball">Ball anzeigen</span></label>
+    <label class="chk"><input type="checkbox" id="optNums" checked> <span data-i18n="opt_nummern">Positionsnummern im Feld</span></label>
 
-    <h2>Legende</h2>
+    <h2 data-i18n="legende">Legende</h2>
     <div class="legend">
-      <div><span style="background:#1f5fa8"></span>Eigener Spieler</div>
-      <div><span style="background:#e0703a"></span>Zuspieler</div>
-      <div><span style="background:#2f9a6a"></span>Libero</div>
-      <div><span style="background:#78838f"></span>Gegnerischer Spieler</div>
-      <div><span style="background:#c62828"></span>Gegnerischer Angreifer</div>
+      <div><span style="background:#1f5fa8"></span><i data-i18n="l_spieler">Eigener Spieler</i></div>
+      <div><span style="background:#e0703a"></span><i data-i18n="l_zuspieler">Zuspieler</i></div>
+      <div><span style="background:#2f9a6a"></span><i data-i18n="l_libero">Libero</i></div>
+      <div><span style="background:#78838f"></span><i data-i18n="l_gegner">Gegnerischer Spieler</i></div>
+      <div><span style="background:#c62828"></span><i data-i18n="l_angreifer">Gegnerischer Angreifer</i></div>
     </div>
 
     <p class="doku"><a href="https://github.com/jekruege/volleyball-aufstellung#readme"
-       target="_blank" rel="noopener">Anleitung und Hilfe</a> – Vorlagen anlegen,
-       weitergeben und über den Link laden</p>
+       target="_blank" rel="noopener" data-i18n="doku_link">Anleitung und Hilfe</a>
+       <span data-i18n="doku_rest">– Vorlagen anlegen, weitergeben und über den Link laden</span></p>
+    <p class="sprache"><a href="#" data-lang="de">Deutsch</a> · <a href="#" data-lang="en">English</a></p>
   </div>
 </div>
 
 <script>
+/* ---------- Sprache ----------
+   Reihenfolge: ?lang=de|en im Link → eigene Wahl (gemerkt) → Browsersprache.
+   Deutschsprachige Browser (de, de-AT, de-CH …) bekommen Deutsch, alle anderen Englisch. */
+const LANG = (() => {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "de" || q === "en") return q;
+  try { const s = localStorage.getItem("vb-sprache"); if (s === "de" || s === "en") return s; } catch (e) {}
+  const l = (navigator.languages && navigator.languages[0]) || navigator.language || "de";
+  return /^de\b/i.test(l) ? "de" : "en";
+})();
+const zahl = v => LANG === "de" ? v.toFixed(1).replace(".", ",") : v.toFixed(1);
+const I18N = {
+  de: {
+    doc_titel: "Volleyball-Aufstellung", feld: "Volleyballfeld", titel: "Volleyball-Aufstellung",
+    hinweis: "Alle Figuren lassen sich mit Maus oder Finger verschieben. Ein <b>Klick</b> wechselt die Rolle und damit die Farbe, der letzte Schritt blendet die Figur aus. Ein <b>Doppelklick</b> ändert die Beschriftung.",
+    ausgeblendet: "Ausgeblendet", aus_link: "Vorlagen aus dem Link", standard: "Standard",
+    p_grund: "Grundstellung (Positionen 1–6)", p_w: "Annahme: W-Formation",
+    abw_vor: "Abwehr mit vorgezogener 6", abw_zur: "Abwehr mit zurückgezogener 6",
+    p_dop4: "Doppelblock – Angriff über deren 4", p_dop2: "Doppelblock – Angriff über deren 2",
+    p_dop3: "Doppelblock – über die Mitte", p_ein4: "Einerblock – Angriff über deren 4",
+    p_ein2: "Einerblock – Angriff über deren 2", p_ein3: "Einerblock – über die Mitte",
+    eigene: "Eigene Vorlagen", name_ph: "Name der Aufstellung", speichern: "Speichern",
+    als_datei: "Als Datei sichern", datei_laden: "Datei laden", link_erzeugen: "Link erzeugen",
+    quiz: "Quiz", quiz_beenden: "Quiz beenden", neuer_satz: "Neuer Satz",
+    link_kopieren: "Link kopieren", kopiert: "Kopiert", cmd_c: "Bitte mit Cmd+C kopieren",
+    per_mail: "Per Mail schicken", anzeige: "Anzeige",
+    opt_linien: "Schlagwinkel des Angreifers", opt_ball: "Ball anzeigen", opt_nummern: "Positionsnummern im Feld",
+    legende: "Legende", l_spieler: "Eigener Spieler", l_zuspieler: "Zuspieler", l_libero: "Libero",
+    l_gegner: "Gegnerischer Spieler", l_angreifer: "Gegnerischer Angreifer",
+    doku_link: "Anleitung und Hilfe", doku_rest: "– Vorlagen anlegen, weitergeben und über den Link laden",
+    feld_gegner: "Gegner", feld_wir: "Eigene Mannschaft",
+    linie: "Linie", lang_diag: "lange Diagonale", kurz_diag: "kurze Diagonale",
+    einblenden: "Wieder einblenden", chip_gegner: "Gegner ",
+    zuspieler_kurz: "Z",
+    umbenennen: "Beschriftung (max. 3 Zeichen, z. B. Z, L, MB, 4):",
+    speicher_fehler: m => "Konnte nicht gespeichert werden: " + m,
+    keine_vorlagen: "Es sind noch keine eigenen Vorlagen vorhanden.\n\nStelle die Mannschaft auf, gib unter „Eigene Vorlagen“ einen Namen ein und klicke auf „Speichern“ – oder lade Vorlagen über „Datei laden“ bzw. über einen Link.",
+    liste_leer: "Noch keine eigenen Vorlagen. Aufstellung hinschieben, Namen eingeben, speichern.",
+    laden_titel: "Laden – Doppelklick zum Überschreiben mit der aktuellen Aufstellung",
+    loeschen: "Löschen", loeschen_frage: n => `Vorlage „${n}“ löschen?`,
+    ueberschreiben_frage: n => `„${n}“ gibt es schon. Überschreiben?`,
+    format_unerwartet: "unerwartetes Format",
+    datei_leer: n => `„${n}“ enthält keine Vorlagen – die Datei ist leer.`,
+    geladen: n => `${n} Vorlage(n) geladen.`,
+    format_falsch: n => `In „${n}“ steht zwar etwas, aber kein Eintrag hat das erwartete Format (own, opp und ball).`,
+    datei_fehler: m => "Datei konnte nicht gelesen werden: " + m,
+    link_info: (n, l) => `${n} Vorlage(n) stecken in diesem Link (${l} Zeichen). Als Lesezeichen sichern oder verschicken – beim Öffnen sind die Aufstellungen wieder da.`,
+    mail_betreff: "Meine Volleyball-Aufstellungen",
+    mail_text: l => "Hier sind meine Aufstellungen:\n\n" + l + "\n\nEinfach den Link öffnen – die Vorlagen stehen dann in der Seitenleiste.",
+    link_fehler: m => "Der Link konnte nicht erzeugt werden: " + m,
+    keine_gueltigen: "keine gültigen Vorlagen enthalten",
+    uebernehmen: "In eigene Vorlagen übernehmen", uebernommen: n => `${n} übernommen`,
+    link_kaputt: "Der Link enthält keine lesbaren Vorlagen – vermutlich ist er beim Verschicken abgeschnitten worden. Am besten neu erzeugen lassen.",
+    adr_ungueltig: "keine gültige Adresse", adr_protokoll: "nicht unterstützte Adresse",
+    adr_fremd: "nur Dateien neben der Seite oder von GitHub",
+    vorlagen_datei: "Vorlagen-Datei", vorlagen_aus: n => "Vorlagen aus " + n,
+    nicht_geladen: (n, f) => `„${n}“ wird nicht geladen: ${f}.`,
+    laden_fehler: (n, m) => `„${n}“ konnte nicht geladen werden (${m}).`,
+    q_eigene: n => `eigene Vorlagen (${n})`, q_standard: "Standardvorlagen „zurückgezogene 6“",
+    q_quelle: q => "Gespielt wird mit: " + q,
+    q_gewonnen: (a, b) => `Satz gewonnen – ${a}:${b}.`, q_verloren: (a, b) => `Satz verloren – ${a}:${b}.`,
+    q_leer: "In keiner der Vorlagen steht ein eigener Spieler – das Quiz kann nicht starten.",
+    q_frage: l => `Wo steht die „${l}“? Tippe die Stelle im Feld an.`,
+    q_richtig: (a, b) => `Richtig – Punkt für uns. Stand ${a}:${b}.`,
+    q_falsch: (d, a, b) => `Daneben, rund ${d} m entfernt – Punkt für den Gegner. Stand ${a}:${b}.`
+  },
+  en: {
+    doc_titel: "Volleyball Lineup", feld: "Volleyball court", titel: "Volleyball Lineup",
+    hinweis: "Drag any piece with your mouse or finger. A <b>click</b> changes the role and colour; the last step hides the piece. A <b>double-click</b> edits the label.",
+    ausgeblendet: "Hidden", aus_link: "Templates from the link", standard: "Standard",
+    p_grund: "Base positions (1–6)", p_w: "Serve receive: W formation",
+    abw_vor: "Defense with 6 up", abw_zur: "Defense with 6 back",
+    p_dop4: "Double block – attack from their 4", p_dop2: "Double block – attack from their 2",
+    p_dop3: "Double block – through the middle", p_ein4: "Single block – attack from their 4",
+    p_ein2: "Single block – attack from their 2", p_ein3: "Single block – through the middle",
+    eigene: "My templates", name_ph: "Name of the lineup", speichern: "Save",
+    als_datei: "Save as file", datei_laden: "Load file", link_erzeugen: "Create link",
+    quiz: "Quiz", quiz_beenden: "End quiz", neuer_satz: "New set",
+    link_kopieren: "Copy link", kopiert: "Copied", cmd_c: "Press Cmd+C to copy",
+    per_mail: "Send by email", anzeige: "Display",
+    opt_linien: "Attacker's hitting angles", opt_ball: "Show ball", opt_nummern: "Position numbers on court",
+    legende: "Legend", l_spieler: "Own player", l_zuspieler: "Setter", l_libero: "Libero",
+    l_gegner: "Opponent", l_angreifer: "Opposing attacker",
+    doku_link: "Guide and help", doku_rest: "(in German) – creating, sharing and loading templates",
+    feld_gegner: "Opponent", feld_wir: "Our team",
+    linie: "Line", lang_diag: "Cross court", kurz_diag: "Sharp angle",
+    einblenden: "Show again", chip_gegner: "Opp. ",
+    zuspieler_kurz: "S",
+    umbenennen: "Label (max. 3 characters, e.g. S, L, MB, 4):",
+    speicher_fehler: m => "Could not save: " + m,
+    keine_vorlagen: "There are no templates of your own yet.\n\nSet up the team, enter a name under “My templates” and click “Save” – or load templates via “Load file” or a link.",
+    liste_leer: "No templates yet. Arrange the team, enter a name, save.",
+    laden_titel: "Load – double-click to overwrite with the current lineup",
+    loeschen: "Delete", loeschen_frage: n => `Delete template “${n}”?`,
+    ueberschreiben_frage: n => `“${n}” already exists. Overwrite?`,
+    format_unerwartet: "unexpected format",
+    datei_leer: n => `“${n}” contains no templates – the file is empty.`,
+    geladen: n => `${n} template(s) loaded.`,
+    format_falsch: n => `“${n}” contains data, but no entry has the expected format (own, opp and ball).`,
+    datei_fehler: m => "Could not read the file: " + m,
+    link_info: (n, l) => `This link holds ${n} template(s) (${l} characters). Bookmark or share it – opening it brings the lineups back.`,
+    mail_betreff: "My volleyball lineups",
+    mail_text: l => "Here are my lineups:\n\n" + l + "\n\nJust open the link – the templates appear in the sidebar.",
+    link_fehler: m => "Could not create the link: " + m,
+    keine_gueltigen: "no valid templates found",
+    uebernehmen: "Add to my templates", uebernommen: n => `${n} added`,
+    link_kaputt: "This link contains no readable templates – it was probably cut off when it was sent. Best to create a new one.",
+    adr_ungueltig: "not a valid address", adr_protokoll: "unsupported address",
+    adr_fremd: "only files next to this page or from GitHub",
+    vorlagen_datei: "Template file", vorlagen_aus: n => "Templates from " + n,
+    nicht_geladen: (n, f) => `“${n}” is not loaded: ${f}.`,
+    laden_fehler: (n, m) => `“${n}” could not be loaded (${m}).`,
+    q_eigene: n => `my templates (${n})`, q_standard: "standard templates “6 back”",
+    q_quelle: q => "Playing with: " + q,
+    q_gewonnen: (a, b) => `Set won – ${a}:${b}.`, q_verloren: (a, b) => `Set lost – ${a}:${b}.`,
+    q_leer: "None of the templates has a player of your own team – the quiz cannot start.",
+    q_frage: l => `Where is “${l}”? Tap the spot on the court.`,
+    q_richtig: (a, b) => `Correct – point for us. Score ${a}:${b}.`,
+    q_falsch: (d, a, b) => `Missed by about ${d} m – point for the opponent. Score ${a}:${b}.`
+  }
+};
+function t(key, ...args) {
+  const v = (I18N[LANG] && key in I18N[LANG]) ? I18N[LANG][key] : I18N.de[key];
+  return typeof v === "function" ? v(...args) : v;
+}
+// Feste Texte der Seite übersetzen
+document.documentElement.lang = LANG;
+document.title = t("doc_titel");
+document.querySelectorAll("[data-i18n]").forEach(e => { e.textContent = t(e.dataset.i18n); });
+document.querySelectorAll("[data-i18n-html]").forEach(e => { e.innerHTML = t(e.dataset.i18nHtml); });
+document.querySelectorAll("[data-i18n-ph]").forEach(e => { e.placeholder = t(e.dataset.i18nPh); });
+document.querySelectorAll("[data-i18n-aria]").forEach(e => { e.setAttribute("aria-label", t(e.dataset.i18nAria)); });
+document.querySelectorAll("[data-lang]").forEach(a => {
+  a.classList.toggle("aktiv", a.dataset.lang === LANG);
+  a.addEventListener("click", ev => {
+    ev.preventDefault();
+    try { localStorage.setItem("vb-sprache", a.dataset.lang); } catch (e) {}
+    const u = new URL(location.href);
+    u.searchParams.delete("lang");                  // die eigene Wahl gilt, nicht mehr der Link
+    if (u.href === location.href) location.reload(); else location.replace(u.href);
+  });
+});
+
 const NS = "http://www.w3.org/2000/svg";
 const M = 60, S = 40, NET = 420;           // Rand, Pixel pro Meter, Netz-y
 const px = x => M + x * S, py = y => NET + y * S;
@@ -170,8 +318,8 @@ el("line", { x1: px(-0.6), y1: NET, x2: px(9.6), y2: NET, stroke: "#1b1b1b", "st
 el("circle", { cx: px(-0.6), cy: NET, r: 6, fill: "#1b1b1b" });
 el("circle", { cx: px(9.6), cy: NET, r: 6, fill: "#1b1b1b" });
 const lbl = { fill: "#fff", "font-size": 15, "text-anchor": "middle", "font-weight": 600 };
-el("text", Object.assign({ x: 240, y: 38 }, lbl)).textContent = "Gegner";
-el("text", Object.assign({ x: 240, y: 816 }, lbl)).textContent = "Eigene Mannschaft";
+el("text", Object.assign({ x: 240, y: 38 }, lbl)).textContent = t("feld_gegner");
+el("text", Object.assign({ x: 240, y: 816 }, lbl)).textContent = t("feld_wir");
 
 /* Positionsnummern (eigene Seite) */
 const numLayer = el("g", { opacity: 0.22 });
@@ -204,7 +352,7 @@ const CYCLE = { own: ["spieler", "zuspieler", "libero", "versteckt"],
 function roleFromLabel(label, side) {
   const l = (label || "").trim().toUpperCase();
   if (side === "opp") return "gegner";
-  if (l.startsWith("Z")) return "zuspieler";
+  if (l.startsWith("Z") || l.startsWith("S")) return "zuspieler";   // Z = Zuspieler, S = Setter
   if (l.startsWith("L")) return "libero";
   return "spieler";
 }
@@ -257,11 +405,11 @@ function renderHidden() {
   document.getElementById("hiddenHead").hidden = !hid.length;
   for (const p of hid) {
     const b = document.createElement("button");
-    b.title = "Wieder einblenden";
+    b.title = t("einblenden");
     const dot = document.createElement("span");
     dot.className = "dot";
     dot.style.background = p.side === "own" ? COLORS.spieler : COLORS.gegner;
-    b.append(dot, document.createTextNode((p.side === "own" ? "" : "Gegner ") + p.label));
+    b.append(dot, document.createTextNode((p.side === "own" ? "" : t("chip_gegner")) + p.label));
     b.addEventListener("click", () => {
       p.role = p.side === "own" ? "spieler" : "gegner";
       buildPieces();
@@ -277,9 +425,9 @@ function drawLines() {
   if (!a) return;
   const farSide = a.x > 4.5 ? 0 : 9;               // gegenüberliegende Seitenlinie
   const targets = [
-    { x: farSide === 9 ? 0.3 : 8.7, y: 9, t: "Linie" },
-    { x: farSide, y: 9, t: "lange Diagonale" },
-    { x: farSide, y: 3.5, t: "kurze Diagonale" }
+    { x: farSide === 9 ? 0.3 : 8.7, y: 9, t: t("linie") },
+    { x: farSide, y: 9, t: t("lang_diag") },
+    { x: farSide, y: 3.5, t: t("kurz_diag") }
   ];
   for (const tg of targets) {
     el("line", { x1: px(a.x), y1: py(a.y), x2: px(tg.x), y2: py(tg.y), stroke: "#c62828",
@@ -343,7 +491,7 @@ svg.addEventListener("pointerup", endDrag);
 svg.addEventListener("pointercancel", endDrag);
 
 function rename(p) {
-  const v = prompt("Beschriftung (max. 3 Zeichen, z. B. Z, L, MB, 4):", p.label);
+  const v = prompt(t("umbenennen"), p.label);
   if (v === null) return;
   const nl = v.trim().slice(0, 3);
   if (nl) {
@@ -376,7 +524,7 @@ const PRESETS = {
     ball: [7.6,-0.6]
   },
   w: {
-    own: [["1",6.2,7.0],["2",7.6,4.1],["Z",5.8,0.7],["4",1.4,4.1],["5",2.8,7.0],["6",4.5,4.4]],
+    own: [["1",6.2,7.0],["2",7.6,4.1],[t("zuspieler_kurz"),5.8,0.7],["4",1.4,4.1],["5",2.8,7.0],["6",4.5,4.4]],
     opp: [["1",4.5,-9.6,"gegner"],["4",7.5,-1.5,"gegner"],["3",4.5,-1.5,"gegner"],
           ["2",1.5,-1.5,"gegner"],["6",4.5,-6.0,"gegner"],["5",7.5,-6.0,"gegner"]],
     ball: [4.9,-9.6]
@@ -437,7 +585,7 @@ const STORE = "vb-eigene-vorlagen";
 const readStore = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
 function writeStore(o) {
   try { localStorage.setItem(STORE, JSON.stringify(o)); }
-  catch (e) { alert("Konnte nicht gespeichert werden: " + e.message); }
+  catch (e) { alert(t("speicher_fehler", e.message)); }
 }
 const r2 = v => +v.toFixed(2);
 function currentLayout() {
@@ -460,9 +608,7 @@ function eigeneVorlagen() {
   for (const k of Object.keys(alle)) if (!validLayout(alle[k])) delete alle[k];
   return alle;
 }
-const KEINE_VORLAGEN = "Es sind noch keine eigenen Vorlagen vorhanden.\n\n" +
-  "Stelle die Mannschaft auf, gib unter „Eigene Vorlagen“ einen Namen ein und klicke " +
-  "auf „Speichern“ – oder lade Vorlagen über „Datei laden“ bzw. über einen Link.";
+const KEINE_VORLAGEN = t("keine_vorlagen");
 
 const myList = document.getElementById("myList");
 function renderList() {
@@ -472,7 +618,7 @@ function renderList() {
   if (!names.length) {
     const p = document.createElement("p");
     p.className = "empty";
-    p.textContent = "Noch keine eigenen Vorlagen. Aufstellung hinschieben, Namen eingeben, speichern.";
+    p.textContent = t("liste_leer");
     myList.appendChild(p);
     return;
   }
@@ -482,7 +628,7 @@ function renderList() {
     const load = document.createElement("button");
     load.className = "load";
     load.textContent = n;
-    load.title = "Laden – Doppelklick zum Überschreiben mit der aktuellen Aufstellung";
+    load.title = t("laden_titel");
     load.addEventListener("click", () => applyLayout(readStore()[n]));
     load.addEventListener("dblclick", () => {
       const s = readStore(); s[n] = currentLayout(); writeStore(s);
@@ -490,9 +636,9 @@ function renderList() {
     const del = document.createElement("button");
     del.className = "del";
     del.textContent = "×";
-    del.title = "Löschen";
+    del.title = t("loeschen");
     del.addEventListener("click", () => {
-      if (!confirm(`Vorlage „${n}“ löschen?`)) return;
+      if (!confirm(t("loeschen_frage", n))) return;
       const s = readStore(); delete s[n]; writeStore(s); renderList();
     });
     row.append(load, del);
@@ -504,7 +650,7 @@ document.getElementById("btnSave").addEventListener("click", () => {
   const n = newName.value.trim();
   if (!n) { newName.focus(); return; }
   const store = readStore();
-  if (store[n] && !confirm(`„${n}“ gibt es schon. Überschreiben?`)) return;
+  if (store[n] && !confirm(t("ueberschreiben_frage", n))) return;
   store[n] = currentLayout();
   writeStore(store);
   newName.value = "";
@@ -531,23 +677,20 @@ fileIn.addEventListener("change", () => {
   r.onload = () => {
     try {
       const d = JSON.parse(r.result);
-      if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("unerwartetes Format");
+      if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error(t("format_unerwartet"));
       const eintraege = Object.keys(d);
       if (!eintraege.length) {
-        alert(`„${f.name}“ enthält keine Vorlagen – die Datei ist leer.\n\n` +
-              "Gesichert wird nur die Liste unter „Eigene Vorlagen“. War sie beim Sichern " +
-              "leer, ist auch die Datei leer.");
+        alert(t("datei_leer", f.name));
         fileIn.value = ""; return;
       }
       const store = readStore();
       let n = 0;
       for (const k in d) if (validLayout(d[k])) { store[k] = d[k]; n++; }
       writeStore(store); renderList();
-      alert(n ? `${n} Vorlage(n) geladen.`
-              : `In „${f.name}“ steht zwar etwas, aber kein Eintrag hat das erwartete ` +
-                "Format (own, opp und ball).");
+      alert(n ? t("geladen", n)
+              : t("format_falsch", f.name));
     } catch (e) {
-      alert("Datei konnte nicht gelesen werden: " + e.message);
+      alert(t("datei_fehler", e.message));
     }
     fileIn.value = "";
   };
@@ -587,25 +730,23 @@ document.getElementById("btnLink").addEventListener("click", async () => {
     linkFeld.value = link;
     linkBox.hidden = false;
     linkFeld.select();
-    linkInfo.textContent = `${anzahl} Vorlage(n) stecken in diesem Link (${link.length} Zeichen). ` +
-      "Als Lesezeichen sichern oder verschicken – beim Öffnen sind die Aufstellungen wieder da.";
-    btnMail.href = "mailto:?subject=" + encodeURIComponent("Meine Volleyball-Aufstellungen") +
-      "&body=" + encodeURIComponent("Hier sind meine Aufstellungen:\n\n" + link +
-      "\n\nEinfach den Link öffnen – die Vorlagen stehen dann in der Seitenleiste.");
+    linkInfo.textContent = t("link_info", anzahl, link.length);
+    btnMail.href = "mailto:?subject=" + encodeURIComponent(t("mail_betreff")) +
+      "&body=" + encodeURIComponent(t("mail_text", link));
   } catch (e) {
-    alert("Der Link konnte nicht erzeugt werden: " + e.message);
+    alert(t("link_fehler", e.message));
   }
 });
 document.getElementById("btnKopieren").addEventListener("click", async () => {
   const b = document.getElementById("btnKopieren");
   try {
     await navigator.clipboard.writeText(linkFeld.value);
-    b.textContent = "Kopiert";
+    b.textContent = t("kopiert");
   } catch (e) {
     linkFeld.select(); linkFeld.setSelectionRange(0, 99999);
-    b.textContent = "Bitte mit Cmd+C kopieren";
+    b.textContent = t("cmd_c");
   }
-  setTimeout(() => { b.textContent = "Link kopieren"; }, 2500);
+  setTimeout(() => { b.textContent = t("link_kopieren"); }, 2500);
 });
 
 // Beim Öffnen: stecken Vorlagen im Link, werden sie angezeigt
@@ -617,7 +758,7 @@ document.getElementById("btnKopieren").addEventListener("click", async () => {
   try {
     const d = JSON.parse(await auspacken(h));
     const namen = Object.keys(d).filter(k => validLayout(d[k])).sort((a, b) => a.localeCompare(b, "de"));
-    if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
+    if (!namen.length) throw new Error(t("keine_gueltigen"));
     for (const n of namen) {
       zusatzVorlagen[n] = d[n];
       const b = document.createElement("button");
@@ -626,20 +767,19 @@ document.getElementById("btnKopieren").addEventListener("click", async () => {
       liste.appendChild(b);
     }
     const uebernehmen = document.createElement("button");
-    uebernehmen.textContent = "In eigene Vorlagen übernehmen";
+    uebernehmen.textContent = t("uebernehmen");
     uebernehmen.addEventListener("click", () => {
       const store = readStore();
       for (const n of namen) store[n] = d[n];
       writeStore(store); renderList();
-      uebernehmen.textContent = `${namen.length} übernommen`;
-      setTimeout(() => { uebernehmen.textContent = "In eigene Vorlagen übernehmen"; }, 2500);
+      uebernehmen.textContent = t("uebernommen", namen.length);
+      setTimeout(() => { uebernehmen.textContent = t("uebernehmen"); }, 2500);
     });
     liste.appendChild(uebernehmen);
   } catch (e) {
     const p = document.createElement("p");
     p.className = "empty";
-    p.textContent = "Der Link enthält keine lesbaren Vorlagen – vermutlich ist er beim " +
-      "Verschicken abgeschnitten worden. Am besten neu erzeugen lassen.";
+    p.textContent = t("link_kaputt");
     liste.appendChild(p);
   }
 })();
@@ -669,13 +809,13 @@ function vorlagenQuelle() {
   if (!q) return null;                 // ohne Angabe im Link: nur die Standardvorlagen
   let u;
   try { u = new URL(q, location.href); }
-  catch (e) { return { url: null, name: q, fehler: "keine gültige Adresse" }; }
+  catch (e) { return { url: null, name: q, fehler: t("adr_ungueltig") }; }
   if (u.protocol !== "https:" && u.protocol !== "http:" && u.protocol !== "file:")
-    return { url: null, name: q, fehler: "nicht unterstützte Adresse" };
+    return { url: null, name: q, fehler: t("adr_protokoll") };
   const eigen = u.origin === location.origin;
   const erlaubt = ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith("." + h));
   if (!eigen && !erlaubt)
-    return { url: null, name: q, fehler: "nur Dateien neben der Seite oder von GitHub" };
+    return { url: null, name: q, fehler: t("adr_fremd") };
   const datei = u.pathname.split("/").filter(Boolean).pop() || "";
   return {
     url: eigen ? u.href : rohAdresse(u),
@@ -693,16 +833,16 @@ function clubHinweis(text) {
   clubList.appendChild(p);
 }
 if (quelle && !quelle.url) {
-  clubHead.textContent = "Vorlagen-Datei";
-  clubHinweis(`„${quelle.name}“ wird nicht geladen: ${quelle.fehler}.`);
+  clubHead.textContent = t("vorlagen_datei");
+  clubHinweis(t("nicht_geladen", quelle.name, quelle.fehler));
 } else if (quelle) {
-  clubHead.textContent = "Vorlagen aus " + quelle.name;
+  clubHead.textContent = t("vorlagen_aus", quelle.name);
   fetch(quelle.url, { cache: "no-cache" })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
       const namen = Object.keys(d).filter(k => validLayout(d[k]))
                           .sort((a, b) => a.localeCompare(b, "de"));
-      if (!namen.length) throw new Error("keine gültigen Vorlagen enthalten");
+      if (!namen.length) throw new Error(t("keine_gueltigen"));
       for (const n of namen) {
         const b = document.createElement("button");
         b.textContent = n;
@@ -712,7 +852,7 @@ if (quelle && !quelle.url) {
       }
       clubHead.hidden = false;
     })
-    .catch(err => clubHinweis(`„${quelle.name}“ konnte nicht geladen werden (${err.message}).`));
+    .catch(err => clubHinweis(t("laden_fehler", quelle.name, err.message)));
 }
 
 /* ---------- Optionen ---------- */
@@ -753,9 +893,9 @@ const markerLayer = el("g", {});
 
 function quizPool() {
   const liste = Object.values(eigeneVorlagen());
-  if (liste.length) return { liste, quelle: `eigene Vorlagen (${liste.length})` };
+  if (liste.length) return { liste, quelle: t("q_eigene", liste.length) };
   return { liste: ["z_dop4", "z_dop2", "z_dop3", "z_ein4", "z_ein2", "z_ein3"].map(n => PRESETS[n]),
-           quelle: "Standardvorlagen „zurückgezogene 6“" };
+           quelle: t("q_standard") };
 }
 function mische(a) {
   a = a.slice();
@@ -786,9 +926,9 @@ function quizStart() {
   quiz.warten = false;
   quizBar.hidden = false;
   btnNeuerSatz.hidden = true;
-  document.getElementById("qQuelle").textContent = "Gespielt wird mit: " + quelle;
+  document.getElementById("qQuelle").textContent = t("q_quelle", quelle);
   svg.classList.add("quiz");
-  btnQuiz.textContent = "Quiz beenden";
+  btnQuiz.textContent = t("quiz_beenden");
   stand();
   naechsteFrage();
 }
@@ -799,7 +939,7 @@ function satzEnde() {                        // Ergebnis stehen lassen, Leiste b
   buildPieces();
   const gewonnen = quiz.wir > quiz.gegner;
   qFrage.className = gewonnen ? "gut" : "schlecht";
-  qFrage.textContent = `${gewonnen ? "Satz gewonnen" : "Satz verloren"} – ${quiz.wir}:${quiz.gegner}.`;
+  qFrage.textContent = t(gewonnen ? "q_gewonnen" : "q_verloren", quiz.wir, quiz.gegner);
   btnNeuerSatz.hidden = false;
 }
 function quizSchliessen() {                  // Leiste weg, alte Aufstellung zurück
@@ -807,7 +947,7 @@ function quizSchliessen() {                  // Leiste weg, alte Aufstellung zur
   quiz.offen = quiz.aktiv = false;
   svg.classList.remove("quiz");
   quizBar.hidden = true;
-  btnQuiz.textContent = "Quiz";
+  btnQuiz.textContent = t("quiz");
   const vorher = quiz.vorher;
   quiz.vorher = null;
   if (vorher) applyLayout(vorher); else buildPieces();
@@ -824,14 +964,14 @@ function naechsteFrage() {
   }
   if (!moeglich.length) {                                  // keine Vorlage mit sichtbaren Spielern
     quizSchliessen();
-    alert("In keiner der Vorlagen steht ein eigener Spieler – das Quiz kann nicht starten.");
+    alert(t("q_leer"));
     return;
   }
   quiz.fehlt = moeglich[Math.floor(Math.random() * moeglich.length)];
   quiz.fehlt.quizAus = true;
   buildPieces();
   qFrage.className = "";
-  qFrage.textContent = `Wo steht die „${quiz.fehlt.label}“? Tippe die Stelle im Feld an.`;
+  qFrage.textContent = t("q_frage", quiz.fehlt.label);
   quiz.warten = false;
 }
 
@@ -855,8 +995,8 @@ function quizKlick(evt) {
   }
   qFrage.className = richtig ? "gut" : "schlecht";
   qFrage.textContent = richtig
-    ? `Richtig – Punkt für uns. Stand ${quiz.wir}:${quiz.gegner}.`
-    : `Daneben, rund ${abstand.toFixed(1).replace(".", ",")} m entfernt – Punkt für den Gegner. Stand ${quiz.wir}:${quiz.gegner}.`;
+    ? t("q_richtig", quiz.wir, quiz.gegner)
+    : t("q_falsch", zahl(abstand), quiz.wir, quiz.gegner);
 
   quiz.timer = setTimeout(() => {
     if (!quiz.aktiv) return;                 // inzwischen beendet
