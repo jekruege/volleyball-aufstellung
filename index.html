@@ -450,6 +450,20 @@ function currentLayout() {
 const validLayout = v => v && Array.isArray(v.own) && v.own.length === 6 &&
   (Array.isArray(v.opp) || Array.isArray(v.att));
 
+// Nachgeladene Vorlagen (per ?vorlagen=… oder aus einem erzeugten Link)
+const zusatzVorlagen = {};
+// Alle eigenen Vorlagen: im Browser gespeicherte plus nachgeladene.
+// Sichern, Link erzeugen und Quiz nutzen genau diese Liste.
+// Bei gleichem Namen gewinnt die gespeicherte Fassung.
+function eigeneVorlagen() {
+  const alle = Object.assign({}, zusatzVorlagen, readStore());
+  for (const k of Object.keys(alle)) if (!validLayout(alle[k])) delete alle[k];
+  return alle;
+}
+const KEINE_VORLAGEN = "Es sind noch keine eigenen Vorlagen vorhanden.\n\n" +
+  "Stelle die Mannschaft auf, gib unter „Eigene Vorlagen“ einen Namen ein und klicke " +
+  "auf „Speichern“ – oder lade Vorlagen über „Datei laden“ bzw. über einen Link.";
+
 const myList = document.getElementById("myList");
 function renderList() {
   const store = readStore();
@@ -499,14 +513,8 @@ document.getElementById("btnSave").addEventListener("click", () => {
 newName.addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("btnSave").click(); });
 
 document.getElementById("btnExport").addEventListener("click", () => {
-  const store = readStore();
-  if (!Object.keys(store).length) {
-    alert("Es sind noch keine eigenen Vorlagen gespeichert.\n\n" +
-          "Gesichert wird nur die Liste unter „Eigene Vorlagen“. Stelle die Mannschaft " +
-          "auf, gib oben einen Namen ein und klicke auf „Speichern“ – danach lässt sich " +
-          "alles als Datei sichern.");
-    return;
-  }
+  const store = eigeneVorlagen();
+  if (!Object.keys(store).length) { alert(KEINE_VORLAGEN); return; }
   const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -571,14 +579,9 @@ async function auspacken(teil) {
 const linkBox = document.getElementById("linkBox"), linkFeld = document.getElementById("linkFeld");
 const linkInfo = document.getElementById("linkInfo"), btnMail = document.getElementById("btnMail");
 document.getElementById("btnLink").addEventListener("click", async () => {
-  const store = readStore();
+  const store = eigeneVorlagen();
   const anzahl = Object.keys(store).length;
-  if (!anzahl) {
-    alert("Es sind noch keine eigenen Vorlagen gespeichert.\n\n" +
-          "Stelle die Mannschaft auf, gib oben einen Namen ein und klicke auf " +
-          "„Speichern“ – danach lässt sich daraus ein Link erzeugen.");
-    return;
-  }
+  if (!anzahl) { alert(KEINE_VORLAGEN); return; }
   try {
     const link = location.origin + location.pathname + "#" + await packen(JSON.stringify(store));
     linkFeld.value = link;
@@ -604,9 +607,6 @@ document.getElementById("btnKopieren").addEventListener("click", async () => {
   }
   setTimeout(() => { b.textContent = "Link kopieren"; }, 2500);
 });
-
-// Alle nachgeladenen Vorlagen (aus dem Link oder aus einer Datei) – das Quiz nutzt sie mit
-const zusatzVorlagen = {};
 
 // Beim Öffnen: stecken Vorlagen im Link, werden sie angezeigt
 (async () => {
@@ -752,8 +752,7 @@ const btnQuiz = document.getElementById("btnQuiz"), btnNeuerSatz = document.getE
 const markerLayer = el("g", {});
 
 function quizPool() {
-  const eigene = Object.assign({}, zusatzVorlagen, readStore());   // Gespeichertes gewinnt bei gleichem Namen
-  const liste = Object.values(eigene).filter(validLayout);
+  const liste = Object.values(eigeneVorlagen());
   if (liste.length) return { liste, quelle: `eigene Vorlagen (${liste.length})` };
   return { liste: ["z_dop4", "z_dop2", "z_dop3", "z_ein4", "z_ein2", "z_ein3"].map(n => PRESETS[n]),
            quelle: "Standardvorlagen „zurückgezogene 6“" };
